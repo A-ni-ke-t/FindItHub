@@ -1,0 +1,119 @@
+$primary-color: #4caf50;
+$primary-color-hover: #45a049;
+$error-color: #ff4d4d;
+$background-color: #f0f2f5;
+$input-border: #ccc;
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: $background-color;
+  padding: 1rem;
+
+  .login-form {
+    background: #fff;
+    padding: 2.5rem 3rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    width: 400px;
+    max-width: 100%;
+
+    h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-size: 2rem;
+      color: $primary-color;
+    }
+
+    .error {
+      color: $error-color;
+      text-align: center;
+      margin-bottom: 1rem;
+      font-weight: bold;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 1.5rem;
+
+      label {
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        font-size: 1rem;
+      }
+
+      input {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        border: 1px solid $input-border;
+        border-radius: 8px;
+        transition: all 0.2s;
+
+        &:focus {
+          border-color: $primary-color;
+          box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+          outline: none;
+        }
+      }
+    }
+
+    button {
+      width: 100%;
+      padding: 0.9rem;
+      border: none;
+      border-radius: 8px;
+      background-color: $primary-color;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background-color: $primary-color-hover;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      }
+    }
+
+    .forgot-password {
+      margin-top: 1rem;
+      text-align: right;
+      font-size: 0.9rem;
+
+      a {
+        color: $primary-color;
+        text-decoration: none;
+        transition: color 0.2s;
+
+        &:hover {
+          color: darken($primary-color, 10%);
+        }
+      }
+    }
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .login-form {
+    padding: 2rem 1.5rem;
+
+    h2 {
+      font-size: 1.5rem;
+    }
+
+    .form-group input {
+      font-size: 0.9rem;
+      padding: 0.65rem 0.8rem;
+    }
+
+    button {
+      font-size: 1rem;
+      padding: 0.75rem;
+    }
+  }
+}
