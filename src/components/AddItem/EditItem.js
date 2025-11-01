@@ -88,7 +88,9 @@ const EditItem = () => {
     );
 
   return (
-    <div className="additem-container">
+      <div className="edititem-wrapper">
+
+    <div className="additem-container" >
       <h1>Edit Item</h1>
       <form onSubmit={handleSubmit} className="additem-form">
         <label>
@@ -154,6 +156,7 @@ const EditItem = () => {
           {loading ? "Saving..." : "Update Item"}
         </button>
       </form>
+    </div>
     </div>
   );
 };
