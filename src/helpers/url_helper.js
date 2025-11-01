@@ -1,10 +1,20 @@
-export const API_URL = process.env.REACT_APP_API_URL
-// export const API_URL = `http://localhost:5000`
-// export const API_URL = `https://medilinen.api.erpca.shop`
-// export const API_URL = `https://api.medilinensolutions.com`
+// export const API_URL = process.env.REACT_APP_API_URL
+// export const API_URL = `https://findithub-backend.onrender.com`
+export const API_URL = `http://localhost:9000`
 
-export const LOGIN_USER = `${API_URL}/api/admin-user/login`
-export const LOGOUT_USER = `${API_URL}/api/admin-user/logout`
+
+export const LOGIN_USER = `${API_URL}/auth/login`
+export const VERIFY_OTP = `${API_URL}/auth/verify-otp`;
+export const REGISTER_USER = `${API_URL}/auth/register`;
+export const CHANGE_PASSWORD = `${API_URL}/auth/change-password`;
+export const ADD_ITEMS = `${API_URL}/items`;
+export const GET_ITEMS = `${API_URL}/items`;
+export const GET_COMMENTS = `${API_URL}/items`;
+export const POST_ITEM = `${API_URL}/items`;
+export const RETURNED_ITEM = `${API_URL}/items`;
+export const UPLOAD = `${API_URL}/upload/`;
+
+export const LOGOUT_USER = `${API_URL}/auth/logout`
 
 export const GET_PRODUCTS = `${API_URL}/api/products/list-products`
 export const GET_PRODUCT_DETAIL = `${API_URL}/api/products/get-product`

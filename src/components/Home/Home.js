@@ -1,37 +1,36 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Home.scss";
+import Swal from "sweetalert2";
+import { getItems } from "../../helpers/fakebackend_helper";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
-  // Example static data (you can later fetch this from your backend)
-  const [items] = useState([
-    {
-      id: 1,
-      title: "Lost Wallet",
-      description: "Brown leather wallet lost near city park.",
-      location: "Central Park",
-      dateLost: "2025-10-25",
-      contact: "john@example.com",
-    },
-    {
-      id: 2,
-      title: "Black Backpack",
-      description: "Contains a laptop and notebooks.",
-      location: "Main Library",
-      dateLost: "2025-10-28",
-      contact: "jane@example.com",
-    },
-    {
-      id: 3,
-      title: "Silver Ring",
-      description: "Engraved ring lost near cafeteria.",
-      location: "City Mall",
-      dateLost: "2025-10-30",
-      contact: "alex@example.com",
-    },
-  ]);
-
-  // State for toggling view mode
+  const [items, setItems] = useState([]);
   const [viewMode, setViewMode] = useState("list");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const fetchItems = async () => {
+    setLoading(true);
+    try {
+      const response = await getItems();
+      const resData = response;
+
+      if (resData.status === 200 && Array.isArray(resData.data)) {
+        setItems(resData.data);
+      } else {
+        Swal.fire("No Items", "No lost items found.", "info");
+      }
+    } catch (err) {
+      Swal.fire("Error", "Failed to load items.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
 
   return (
     <div className="home-container">
@@ -53,18 +52,21 @@ const Home = () => {
         </div>
       </div>
 
-      <p>Browse through the list of lost items reported by users.</p>
-
-      {/* Conditionally render based on viewMode */}
-      {viewMode === "card" ? (
+      {loading ? (
+        <p>Loading...</p>
+      ) : viewMode === "card" ? (
         <div className="items-grid">
           {items.map((item) => (
-            <div key={item.id} className="item-card">
+            <div key={item._id} className="item-card">
               <h3>{item.title}</h3>
-              <p><strong>Description:</strong> {item.description}</p>
               <p><strong>Location:</strong> {item.location}</p>
-              <p><strong>Date Lost:</strong> {item.dateLost}</p>
-              <p><strong>Contact:</strong> {item.contact}</p>
+              {item.image && <img src={item.image} alt={item.title} className="item-image" />}
+              <button
+                className="view-btn"
+                onClick={() => navigate(`/items/${item._id}`, { state: { item } })}
+              >
+                View Details
+              </button>
             </div>
           ))}
         </div>
@@ -73,20 +75,25 @@ const Home = () => {
           <thead>
             <tr>
               <th>Title</th>
-              <th>Description</th>
               <th>Location</th>
-              <th>Date Lost</th>
-              <th>Contact</th>
+              <th>Reporter</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.id}>
+              <tr key={item._id}>
                 <td>{item.title}</td>
-                <td>{item.description}</td>
                 <td>{item.location}</td>
-                <td>{item.dateLost}</td>
-                <td>{item.contact}</td>
+                <td>{item.createdBy?.fullName}</td>
+                <td>
+                  <button
+                    className="view-btn"
+                    onClick={() => navigate(`/items/${item._id}`, { state: { item } })}
+                  >
+                    View
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

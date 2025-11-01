@@ -6,15 +6,29 @@ import "./Dashboard.scss";
 import Profile from "../Profile/Profile";
 import Home from "../Home/Home";
 import AddItem from "../AddItem/AddItem";
+import Logout from "../Logout/Logout";
+import Swal from "sweetalert2";
 
 const Dashboard = () => {
   const [activeMenu, setActiveMenu] = useState("Home");
 
-  const handleMenuClick = (menu) => {
+  const handleMenuClick = async (menu) => {
     if (menu === "Logout") {
-      alert("Logged out successfully!");
-      // Optionally, you can reset the active menu or redirect to login page
-      setActiveMenu("Home");
+      // Use SweetAlert for confirmation before logging out
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "Do you really want to log out?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Logout",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+      });
+
+      if (result.isConfirmed) {
+        setActiveMenu("Logout"); // triggers Logout component
+      }
     } else {
       setActiveMenu(menu);
     }
@@ -23,28 +37,15 @@ const Dashboard = () => {
   const renderContent = () => {
     switch (activeMenu) {
       case "Home":
-        return (
-           <>
-           <Home/>
-          </>
-        );
+        return <Home />;
       case "Add Item":
-        return (
-          <>
-           <AddItem/>
-          </>
-        );
+        return <AddItem />;
       case "Profile":
-        return (
-          <>
-           <Profile/>
-          </>
-        );
-        case "Logout":
-          return (
-            <>
-            </>
-          );
+        return <Profile />;
+      case "Logout":
+        return <Logout />; // now actually renders Logout component
+      default:
+        return <Home />;
     }
   };
 

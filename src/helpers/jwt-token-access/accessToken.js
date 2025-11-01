@@ -1,9 +1,14 @@
-const obj = JSON.parse(localStorage.getItem("authUser"))
-let accessToken = null
+// src/helpers/accessToken.js
 
-if (obj && obj.data.token) {
-  const Authorization = obj.data.token
-  accessToken = Authorization
+let accessToken = null;
+
+const token = localStorage.getItem("userToken");
+
+if (token) {
+  accessToken = `Bearer ${token}`;
+  console.log("✅ Loaded accessToken:", accessToken);
+} else {
+  console.warn("⚠️ No access token found in localStorage.");
 }
 
-export default accessToken
+export default accessToken;
