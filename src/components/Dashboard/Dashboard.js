@@ -4,6 +4,8 @@ import TopNav from "../Topnav/Topnav";
 import Footer from "../Footer/Footer";
 import "./Dashboard.scss";
 import Profile from "../Profile/Profile";
+import Home from "../Home/Home";
+import AddItem from "../AddItem/AddItem";
 
 const Dashboard = () => {
   const [activeMenu, setActiveMenu] = useState("Home");
@@ -22,16 +24,14 @@ const Dashboard = () => {
     switch (activeMenu) {
       case "Home":
         return (
-          <>
-            <h1>Home</h1>
-            <p>Welcome to your Home! Here is your overview.</p>
+           <>
+           <Home/>
           </>
         );
       case "Add Item":
         return (
           <>
-            <h1>Profile</h1>
-            <p>Manage your profile information here.</p>
+           <AddItem/>
           </>
         );
       case "Profile":
