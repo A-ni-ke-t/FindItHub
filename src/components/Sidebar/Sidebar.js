@@ -2,7 +2,7 @@ import React from "react";
 import "./Sidebar.scss";
 
 const Sidebar = ({ activeMenu, setActiveMenu }) => {
-  const menuItems = ["Home", "Add Item", "Profile", "Logout"];
+  const menuItems = ["Home", "Add Item",  "Logout"];
 
   return (
     <div className="sidebar">

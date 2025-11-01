@@ -3,7 +3,6 @@ import Sidebar from "../Sidebar/Sidebar";
 import TopNav from "../Topnav/Topnav";
 import Footer from "../Footer/Footer";
 import "./Dashboard.scss";
-import Profile from "../Profile/Profile";
 import Home from "../Home/Home";
 import AddItem from "../AddItem/AddItem";
 import Logout from "../Logout/Logout";
@@ -40,8 +39,7 @@ const Dashboard = () => {
         return <Home />;
       case "Add Item":
         return <AddItem />;
-      case "Profile":
-        return <Profile />;
+      
       case "Logout":
         return <Logout />; // now actually renders Logout component
       default:

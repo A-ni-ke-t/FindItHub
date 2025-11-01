@@ -12,6 +12,7 @@ export const GET_ITEMS = `${API_URL}/items`;
 export const GET_COMMENTS = `${API_URL}/items`;
 export const POST_ITEM = `${API_URL}/items`;
 export const RETURNED_ITEM = `${API_URL}/items`;
+export const UPDATE_ITEM = `${API_URL}/items`;
 export const UPLOAD = `${API_URL}/upload/`;
 
 export const LOGOUT_USER = `${API_URL}/auth/logout`

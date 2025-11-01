@@ -45,13 +45,7 @@ const Login = () => {
         localStorage.setItem("userToken", resData.token);
         localStorage.setItem("userInfo", JSON.stringify(resData.user));
 
-        await Swal.fire({
-          title: "Login Successful 🎉",
-          text: "You have been successfully logged in.",
-          icon: "success",
-          confirmButtonText: "Go to Dashboard",
-          confirmButtonColor: "#3085d6",
-        });
+        
 
         navigate("/dashboard");
       } else {

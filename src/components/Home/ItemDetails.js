@@ -8,7 +8,7 @@ import {
   markItemAsReturned,
 } from "../../helpers/fakebackend_helper";
 
-import {API_URL} from '../../helpers/url_helper'
+import { API_URL } from "../../helpers/url_helper";
 const ItemDetails = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
@@ -45,7 +45,11 @@ const ItemDetails = () => {
     e.preventDefault();
 
     if (!newComment.trim()) {
-      Swal.fire("Empty Comment", "Please write something before posting.", "warning");
+      Swal.fire(
+        "Empty Comment",
+        "Please write something before posting.",
+        "warning"
+      );
       return;
     }
 
@@ -61,13 +65,18 @@ const ItemDetails = () => {
         Swal.fire("✅ Posted", "Your comment has been added!", "success");
         fetchComments(); // refresh comments
       } else {
-        Swal.fire("Error", resData.message || "Failed to add comment.", "error");
+        Swal.fire(
+          "Error",
+          resData.message || "Failed to add comment.",
+          "error"
+        );
       }
     } catch (err) {
       console.error("Add Comment Error:", err);
       Swal.fire(
         "Error",
-        err.response?.data?.message || "Something went wrong while posting comment.",
+        err.response?.data?.message ||
+          "Something went wrong while posting comment.",
         "error"
       );
     } finally {
@@ -98,19 +107,24 @@ const ItemDetails = () => {
         description: item.description,
       });
 
-      const resData =  response;
+      const resData = response;
 
       if (resData.status === 200 || resData.success) {
         Swal.fire("✅ Success", "Item marked as returned!", "success");
         navigate("/dashboard"); // redirect after marking
       } else {
-        Swal.fire("Error", resData.message || "Failed to mark item as returned.", "error");
+        Swal.fire(
+          "Error",
+          resData.message || "Failed to mark item as returned.",
+          "error"
+        );
       }
     } catch (err) {
       console.error("Return Error:", err);
       Swal.fire(
         "Error",
-        err.response?.data?.message || "Something went wrong while marking returned.",
+        err.response?.data?.message ||
+          "Something went wrong while marking returned.",
         "error"
       );
     } finally {
@@ -129,20 +143,34 @@ const ItemDetails = () => {
       </p>
     );
 
-    console.log("API_URL",`${API_URL}/${item.image}`)
   return (
     <div className="item-details-container">
       <h1>{item.title}</h1>
       {item.image && (
-        <div className="image-div"> 
-          <img src= {`${API_URL}${item.image}`} alt={item.title} className="detail-image"  />
-          </div>
+        <div className="image-div">
+          <img
+            src={`${item.image}`}
+            alt={item.title}
+            className="detail-image"
+          />
+        </div>
       )}
-      <p><strong>Description:</strong> {item.description}</p>
-      <p><strong>Location:</strong> {item.location}</p>
-      <p><strong>Reported By:</strong> {item.createdBy?.fullName}</p>
-      <p><strong>Email:</strong> {item.createdBy?.emailAddress}</p>
-      <p><strong>Reported On:</strong> {new Date(item.createdAt).toLocaleString()}</p>
+      <p>
+        <strong>Description:</strong> {item.description}
+      </p>
+      <p>
+        <strong>Location:</strong> {item.location}
+      </p>
+      <p>
+        <strong>Reported By:</strong> {item.createdBy?.fullName}
+      </p>
+      <p>
+        <strong>Email:</strong> {item.createdBy?.emailAddress}
+      </p>
+      <p>
+        <strong>Reported On:</strong>{" "}
+        {new Date(item.createdAt).toLocaleString()}
+      </p>
 
       {!item.returned ? (
         <button
@@ -153,7 +181,9 @@ const ItemDetails = () => {
           {returning ? "Marking..." : "Mark as Returned ✅"}
         </button>
       ) : (
-        <p className="returned-label">✅ This item has been marked as returned.</p>
+        <p className="returned-label">
+          ✅ This item has been marked as returned.
+        </p>
       )}
 
       <hr />
@@ -166,8 +196,11 @@ const ItemDetails = () => {
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Write a comment..."
           rows="3"
+          disabled={item.returned}
         ></textarea>
-        <button type="submit" disabled={posting}>
+        <button type="submit" disabled={posting }             className={item.returned ? "disabled-btn" : ""}
+
+>
           {posting ? "Posting..." : "Add Comment"}
         </button>
       </form>

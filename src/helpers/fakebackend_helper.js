@@ -12,6 +12,7 @@ export const getItems = () => get(`${url.GET_ITEMS}`)
 export const getItemComments = (id) => get(`${url.GET_COMMENTS}/${id}/comments`)
 export const postItemComment = (id,data) => post(`${url.POST_ITEM}/${id}/comments`, data)
 export const markItemAsReturned = (id,data) => patch(`${url.RETURNED_ITEM}/${id}/return`, data)
+export const patchItem = (id,data) => patch(`${url.UPDATE_ITEM}/${id}`, data)
 export const uploadFile = (formData) => postWithFile(`${url.UPLOAD}`, formData);
 
 export const getUsersList = () => get(url.GET_USERS)
