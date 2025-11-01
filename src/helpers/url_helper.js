@@ -1,6 +1,6 @@
 // export const API_URL = process.env.REACT_APP_API_URL
-// export const API_URL = `https://findithub-backend.onrender.com`
-export const API_URL = `http://localhost:9000`
+export const API_URL = `https://findithub-backend.onrender.com`
+// export const API_URL = `http://localhost:9000`
 
 
 export const LOGIN_USER = `${API_URL}/auth/login`
