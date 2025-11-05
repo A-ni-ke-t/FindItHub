@@ -1,5 +1,5 @@
 // export const API_URL = process.env.REACT_APP_API_URL
-export const API_URL = `https://findithub-backend.onrender.com`
+export const API_URL = `https://find-it-hub-backend.vercel.app`
 // export const API_URL = `http://localhost:9000`
 
 

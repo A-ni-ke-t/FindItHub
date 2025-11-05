@@ -2,8 +2,6 @@ import axios from "axios"
 import accessToken from "./jwt-token-access/accessToken"
 import Swal from "sweetalert2"
 
-const token = accessToken
-
 const API_URL = ""
 
 const axiosApi = axios.create({
