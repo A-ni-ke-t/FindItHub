@@ -1,8 +1,31 @@
 import React, { useState } from "react";
-import "./Login.scss";
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Card,
+  CardContent,
+  InputAdornment,
+  IconButton,
+  FormControlLabel,
+  Checkbox,
+  Link,
+  Snackbar,
+  Alert,
+  Backdrop,
+  CircularProgress,
+  Avatar,
+} from "@mui/material";
+import {
+  Visibility,
+  VisibilityOff,
+  Email,
+  Lock,
+  Search,
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { login, verifyOtp } from "../../helpers/fakebackend_helper";
-import Swal from "sweetalert2";
 
 const Login = () => {
   const [emailAddress, setEmailAddress] = useState("");
@@ -11,9 +34,21 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [otpStep, setOtpStep] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
+
   const navigate = useNavigate();
 
-  // Step 1: Login API
+  // Snackbar helper
+  const showSnackbar = (message, severity = "info") => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  // Login handler
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
 
@@ -26,50 +61,28 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const userData = { emailAddress, password };
-      const response = await login(userData);
-
-      console.log("Login API Response:", response.data);
+      const response = await login({ emailAddress, password });
       const resData = response?.data || response;
 
       if (resData.requiresOtp) {
-        await Swal.fire({
-          title: "OTP Required",
-          text: "An OTP has been sent to your email for verification.",
-          icon: "info",
-          confirmButtonText: "Verify Now",
-          confirmButtonColor: "#3085d6",
-        });
+        showSnackbar("OTP has been sent to your email.", "info");
         setOtpStep(true);
       } else if (resData.token) {
         localStorage.setItem("userToken", resData.token);
         localStorage.setItem("userInfo", JSON.stringify(resData.user));
-
-        
-
-        navigate("/dashboard");
+        showSnackbar("Login successful!", "success");
+        navigate("/home");
       } else {
-        Swal.fire({
-          title: "Login Error",
-          text: resData.message || "Unexpected response from server.",
-          icon: "error",
-          confirmButtonColor: "#d33",
-        });
+        showSnackbar(resData.message || "Unexpected response from server.", "error");
       }
     } catch (err) {
-      console.error("Login Error:", err);
-      Swal.fire({
-        title: "Login Failed",
-        text: err.response?.data?.message || "Invalid credentials. Please try again.",
-        icon: "error",
-        confirmButtonColor: "#d33",
-      });
+      showSnackbar("Invalid credentials. Please try again.", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  // Step 2: OTP Verification
+  // OTP verification handler
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
 
@@ -82,116 +95,225 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const otpData = { emailAddress, otp };
-      const response = await verifyOtp(otpData);
+      const response = await verifyOtp({ emailAddress, otp });
       const resData = response?.data || response;
-      console.log("Verify OTP Response:", resData);
 
-      if (resData.status === 200 && resData.success) {
-        await Swal.fire({
-          title: "OTP Verified 🎉",
-          text: resData.message || "Verification successful. You are now logged in!",
-          icon: "success",
-          confirmButtonText: "Go to Dashboard",
-          confirmButtonColor: "#3085d6",
-        });
-
-        // Save login details and redirect
+      if (resData.success) {
         localStorage.setItem("userToken", resData.token || "");
         localStorage.setItem("userInfo", JSON.stringify(resData.user || {}));
-        navigate("/dashboard");
+        showSnackbar("OTP verified successfully!", "success");
+        navigate("/home");
       } else {
-        Swal.fire({
-          title: "Invalid OTP",
-          text: resData.message || "Please check the OTP and try again.",
-          icon: "error",
-          confirmButtonColor: "#d33",
-        });
+        showSnackbar(resData.message || "Invalid OTP. Try again.", "error");
       }
     } catch (err) {
-      console.error("OTP Error:", err);
-      Swal.fire({
-        title: "OTP Verification Failed",
-        text: err.response?.data?.message || "Something went wrong. Please try again.",
-        icon: "error",
-        confirmButtonColor: "#d33",
-      });
+      showSnackbar("Something went wrong. Please try again.", "error");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="login-container">
-      {!otpStep ? (
-        <form className="login-form" onSubmit={handleLoginSubmit}>
-          <h2>Login</h2>
-          {error && <p className="error">{error}</p>}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(to bottom right, #e0f7fa, #ffffff)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        p: 2,
+      }}
+    >
+      {/* Logo Section */}
+      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+        <Avatar sx={{ bgcolor: "#00bcd4", width: 40, height: 40, mr: 1 }}>
+          <Search sx={{ color: "#fff" }} />
+        </Avatar>
+        <Typography variant="h5" fontWeight="bold" color="#007c91">
+          FindItHub
+        </Typography>
+      </Box>
 
-          <div className="form-group">
-            <label>Email Address</label>
-            <input
-              type="email"
-              value={emailAddress}
-              onChange={(e) => setEmailAddress(e.target.value)}
-              placeholder="Enter your email"
-              required
-            />
-          </div>
+      <Typography variant="subtitle1" color="text.secondary" mb={3}>
+        Welcome back! Login to continue
+      </Typography>
 
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-            />
-          </div>
+      {/* Login Card */}
+      <Card sx={{ width: 380, borderRadius: 4, boxShadow: 3 }}>
+        <CardContent>
+          {!otpStep ? (
+            <form onSubmit={handleLoginSubmit}>
+              <Typography
+                variant="h5"
+                fontWeight="bold"
+                align="center"
+                color="#374151"
+                mb={2}
+              >
+                Login
+              </Typography>
 
-          <button type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
-          </button>
+              {error && (
+                <Typography color="error" align="center" mb={2}>
+                  {error}
+                </Typography>
+              )}
 
-          <div className="register-link">
-            Don’t have an account? <a href="/register">Sign Up</a>
-          </div>
-        </form>
-      ) : (
-        <form className="login-form" onSubmit={handleVerifyOtp}>
-          <h2>Verify OTP</h2>
-          {error && <p className="error">{error}</p>}
+              <TextField
+                fullWidth
+                label="Email Address"
+                variant="outlined"
+                type="email"
+                margin="normal"
+                placeholder="Enter your email"
+                value={emailAddress}
+                onChange={(e) => setEmailAddress(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Email />
+                    </InputAdornment>
+                  ),
+                }}
+              />
 
-          <p className="info">
-            Enter the OTP sent to <strong>{emailAddress}</strong>
-          </p>
+              <TextField
+                fullWidth
+                label="Password"
+                variant="outlined"
+                type={showPassword ? "text" : "password"}
+                margin="normal"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
 
-          <div className="form-group">
-            <label>OTP</label>
-            <input
-              type="text"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              placeholder="Enter 6-digit OTP"
-              required
-            />
-          </div>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mt: 1,
+                }}
+              >
+                <FormControlLabel control={<Checkbox />} label="Remember me" />
+                <Link href="#" underline="hover" color="#00bcd4">
+                  Forgot password?
+                </Link>
+              </Box>
 
-          <button type="submit" disabled={loading}>
-            {loading ? "Verifying..." : "Verify OTP"}
-          </button>
+              <Button
+                fullWidth
+                variant="contained"
+                type="submit"
+                sx={{
+                  mt: 2,
+                  mb: 1,
+                  backgroundColor: "#00bcd4",
+                  "&:hover": { backgroundColor: "#0097a7" },
+                  borderRadius: 2,
+                  py: 1.2,
+                  fontSize: "1rem",
+                  textTransform: "none",
+                }}
+              >
+                Login
+              </Button>
 
-          <button
-            type="button"
-            className="back-btn"
-            onClick={() => setOtpStep(false)}
-          >
-            ← Back to Login
-          </button>
-        </form>
-      )}
-    </div>
+              <Typography align="center" sx={{ mt: 2, color: "text.secondary" }}>
+                Don’t have an account?{" "}
+                <Link href="/register" underline="hover" color="#00bcd4">
+                  Sign Up
+                </Link>
+              </Typography>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp}>
+              <Typography
+                variant="h5"
+                fontWeight="bold"
+                align="center"
+                color="#374151"
+                mb={2}
+              >
+                Verify OTP
+              </Typography>
+
+              <Typography align="center" color="text.secondary" mb={2}>
+                Enter the OTP sent to <strong>{emailAddress}</strong>
+              </Typography>
+
+              <TextField
+                fullWidth
+                label="OTP"
+                variant="outlined"
+                placeholder="Enter 6-digit OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+              />
+
+              <Button
+                fullWidth
+                variant="contained"
+                sx={{
+                  mt: 3,
+                  backgroundColor: "#00bcd4",
+                  "&:hover": { backgroundColor: "#0097a7" },
+                }}
+                type="submit"
+              >
+                Verify OTP
+              </Button>
+
+              <Button
+                fullWidth
+                variant="text"
+                sx={{ mt: 1, color: "#00bcd4" }}
+                onClick={() => setOtpStep(false)}
+              >
+                ← Back to Login
+              </Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+
+      <Typography variant="body2" color="text.secondary" mt={3}>
+        Help reunite lost items with their owners
+      </Typography>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} variant="filled">
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      {/* Loader Backdrop */}
+      <Backdrop sx={(theme) => ({ color: "#fff", zIndex: theme.zIndex.drawer + 1 })} open={loading}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
+    </Box>
   );
 };
 

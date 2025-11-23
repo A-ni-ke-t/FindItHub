@@ -2,9 +2,9 @@ import axios from "axios"
 import accessToken from "./jwt-token-access/accessToken"
 import Swal from "sweetalert2"
 
-const API_URL = ""
+const API_URL =  `https://find-it-hub-backend.vercel.app`
 
-const axiosApi = axios.create({
+export const axiosApi = axios.create({
   baseURL: API_URL,
 })
 
@@ -40,8 +40,8 @@ if (newToken) {
         icon: "error",
         text: "Your Session has Timed Out.",
       }).then(() => {
-        // localStorage.removeItem("userToken")
-        // window.location.href = "/"
+        localStorage.removeItem("userToken")
+        window.location.href = "/"
       })
     }
     return Promise.reject(error)

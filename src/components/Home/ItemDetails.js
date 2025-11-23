@@ -1,134 +1,64 @@
 import React, { useEffect, useState } from "react";
+import {
+  Card,
+  CardMedia,
+  CardContent,
+  Typography,
+  Button,
+  Divider,
+  TextField,
+  CircularProgress,
+  Snackbar,
+  Alert,
+  Backdrop,
+  Box,
+  Paper,
+  Stack,
+} from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useLocation, useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
-import "./Home.scss";
 import {
   getItemComments,
   postItemComment,
   markItemAsReturned,
 } from "../../helpers/fakebackend_helper";
 
-import { API_URL } from "../../helpers/url_helper";
 const ItemDetails = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const item = state?.item; // item data passed from Home
+  const item = state?.item;
+
   const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [newComment, setNewComment] = useState("");
+  const [loading, setLoading] = useState(false);
   const [posting, setPosting] = useState(false);
   const [returning, setReturning] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
 
-  // 🟩 Fetch comments for this item
+  const showSnackbar = (message, severity = "info") =>
+    setSnackbar({ open: true, message, severity });
+
+  const handleCloseSnackbar = () =>
+    setSnackbar((prev) => ({ ...prev, open: false }));
+
+  // 🟩 Fetch comments
   const fetchComments = async () => {
     if (!item?._id) return;
     setLoading(true);
     try {
       const response = await getItemComments(item._id);
       const resData = response?.data || response;
-
       if (resData.status === 200 && Array.isArray(resData.data)) {
         setComments(resData.data);
-      } else {
-        setComments([]);
-      }
+      } else setComments([]);
     } catch (err) {
-      console.error("Comments fetch error:", err);
-      Swal.fire("Error", "Failed to load comments.", "error");
+      showSnackbar("Failed to load comments.", "error");
     } finally {
       setLoading(false);
-    }
-  };
-
-  // 🟦 Add new comment
-  const handleAddComment = async (e) => {
-    e.preventDefault();
-
-    if (!newComment.trim()) {
-      Swal.fire(
-        "Empty Comment",
-        "Please write something before posting.",
-        "warning"
-      );
-      return;
-    }
-
-    if (!item?._id) return;
-
-    setPosting(true);
-    try {
-      const response = await postItemComment(item._id, { content: newComment });
-      const resData = response?.data || response;
-
-      if (resData.status === 200 || resData.success) {
-        setNewComment("");
-        Swal.fire("✅ Posted", "Your comment has been added!", "success");
-        fetchComments(); // refresh comments
-      } else {
-        Swal.fire(
-          "Error",
-          resData.message || "Failed to add comment.",
-          "error"
-        );
-      }
-    } catch (err) {
-      console.error("Add Comment Error:", err);
-      Swal.fire(
-        "Error",
-        err.response?.data?.message ||
-          "Something went wrong while posting comment.",
-        "error"
-      );
-    } finally {
-      setPosting(false);
-    }
-  };
-
-  // 🟨 Handle Mark as Returned
-  const handleMarkAsReturned = async () => {
-    if (!item?._id) return;
-
-    const confirm = await Swal.fire({
-      title: "Mark Item as Returned?",
-      text: "Are you sure you want to mark this item as returned?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Yes, mark as returned",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    setReturning(true);
-    try {
-      const response = await markItemAsReturned(item._id, {
-        title: item.title,
-        description: item.description,
-      });
-
-      const resData = response;
-
-      if (resData.status === 200 || resData.success) {
-        Swal.fire("✅ Success", "Item marked as returned!", "success");
-        navigate("/dashboard"); // redirect after marking
-      } else {
-        Swal.fire(
-          "Error",
-          resData.message || "Failed to mark item as returned.",
-          "error"
-        );
-      }
-    } catch (err) {
-      console.error("Return Error:", err);
-      Swal.fire(
-        "Error",
-        err.response?.data?.message ||
-          "Something went wrong while marking returned.",
-        "error"
-      );
-    } finally {
-      setReturning(false);
     }
   };
 
@@ -136,94 +66,231 @@ const ItemDetails = () => {
     fetchComments();
   }, [item]);
 
+  // 🟦 Add new comment
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return showSnackbar("Please enter a comment.", "warning");
+    if (!item?._id) return;
+
+    setPosting(true);
+    try {
+      const response = await postItemComment(item._id, { content: newComment });
+      const resData = response?.data || response;
+      if (resData.status === 200 || resData.success) {
+        setNewComment("");
+        showSnackbar("Comment added successfully!", "success");
+        fetchComments();
+      } else {
+        showSnackbar(resData.message || "Failed to add comment.", "error");
+      }
+    } catch (err) {
+      showSnackbar("Something went wrong while posting comment.", "error");
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  // 🟨 Mark as returned
+  const handleMarkAsReturned = async () => {
+    if (!item?._id) return;
+    setReturning(true);
+    try {
+      const response = await markItemAsReturned(item._id, {
+        title: item.title,
+        description: item.description,
+      });
+      const resData = response?.data || response;
+      if (resData.status === 200 || resData.success) {
+        showSnackbar("Item marked as returned!", "success");
+        navigate("/home");
+      } else {
+        showSnackbar(resData.message || "Failed to mark item as returned.", "error");
+      }
+    } catch (err) {
+      showSnackbar("Something went wrong while marking returned.", "error");
+    } finally {
+      setReturning(false);
+    }
+  };
+
   if (!item)
     return (
-      <p style={{ padding: "2rem" }}>
+      <Typography sx={{ p: 4 }}>
         ⚠️ No item data found. Please go back to the home page.
-      </p>
+      </Typography>
     );
 
   return (
-    <div className="item-details-container">
-      <h1>{item.title}</h1>
-      {item.image && (
-        <div className="image-div">
-          <img
-            src={`${item.image}`}
+    <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
+      <Card
+        sx={{
+          width: "100%",
+          maxWidth: 700,
+          borderRadius: 4,
+          boxShadow: 4,
+          p: 2,
+        }}
+      >
+        {/* Back Button */}
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+          <Button
+            variant="text"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate("/home")}
+            sx={{ textTransform: "none", color: "#00bcd4" }}
+          >
+            Back to Home
+          </Button>
+        </Stack>
+
+        {/* Image */}
+        {item.image && (
+          <CardMedia
+            component="img"
+            height="220"
+            image={item.image}
             alt={item.title}
-            className="detail-image"
+            sx={{
+              objectFit: "cover",
+              borderRadius: 2,
+              mb: 2,
+            }}
           />
-        </div>
-      )}
-      <p>
-        <strong>Description:</strong> {item.description}
-      </p>
-      <p>
-        <strong>Location:</strong> {item.location}
-      </p>
-      <p>
-        <strong>Reported By:</strong> {item.createdBy?.fullName}
-      </p>
-      <p>
-        <strong>Email:</strong> {item.createdBy?.emailAddress}
-      </p>
-      <p>
-        <strong>Reported On:</strong>{" "}
-        {new Date(item.createdAt).toLocaleString()}
-      </p>
+        )}
 
-      {!item.returned ? (
-        <button
-          className="return-btn"
-          onClick={handleMarkAsReturned}
-          disabled={returning}
+        {/* Details */}
+        <CardContent sx={{ p: 0 }}>
+          <Typography variant="h5" fontWeight="bold" gutterBottom>
+            {item.title}
+          </Typography>
+
+          <Typography variant="body1" sx={{ mb: 1.5 }}>
+            <strong>Description:</strong> {item.description}
+          </Typography>
+
+          <Typography variant="body2">
+            📍 <strong>Location:</strong> {item.location}
+          </Typography>
+          <Typography variant="body2">
+            👤 <strong>Reported By:</strong> {item.createdBy?.fullName}
+          </Typography>
+          <Typography variant="body2">
+            ✉️ <strong>Email:</strong> {item.createdBy?.emailAddress}
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            🗓 <strong>Reported On:</strong>{" "}
+            {new Date(item.createdAt).toLocaleString()}
+          </Typography>
+
+          {!item.returned ? (
+            <Button
+              variant="contained"
+              color="success"
+              fullWidth
+              onClick={handleMarkAsReturned}
+              disabled={returning}
+              sx={{
+                mt: 2,
+                textTransform: "none",
+                backgroundColor: "#00bcd4",
+                "&:hover": { backgroundColor: "#0097a7" },
+              }}
+            >
+              {returning ? "Marking..." : "Mark as Returned ✅"}
+            </Button>
+          ) : (
+            <Alert severity="success" sx={{ mt: 2 }}>
+              ✅ This item has been marked as returned.
+            </Alert>
+          )}
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Comments Section */}
+          <Typography variant="h6" gutterBottom>
+            Comments
+          </Typography>
+
+          <form onSubmit={handleAddComment}>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              variant="outlined"
+              placeholder="Write a comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              disabled={item.returned}
+            />
+            <Button
+              variant="contained"
+              sx={{
+                mt: 2,
+                textTransform: "none",
+                backgroundColor: "#00bcd4",
+                "&:hover": { backgroundColor: "#0097a7" },
+              }}
+              type="submit"
+              disabled={posting || item.returned}
+            >
+              {posting ? "Posting..." : "Add Comment"}
+            </Button>
+          </form>
+
+          {/* Comments List */}
+          <Box sx={{ mt: 3 }}>
+            {loading ? (
+              <Typography>Loading comments...</Typography>
+            ) : comments.length > 0 ? (
+              comments.map((c) => (
+                <Paper
+                  key={c._id}
+                  elevation={1}
+                  sx={{
+                    p: 2,
+                    mb: 1.5,
+                    borderRadius: 2,
+                    backgroundColor: "#f9f9f9",
+                  }}
+                >
+                  <Typography>{c.content}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    By: {c.userId?.fullName || "Anonymous"} •{" "}
+                    {new Date(c.createdAt).toLocaleString()}
+                  </Typography>
+                </Paper>
+              ))
+            ) : (
+              <Typography color="text.secondary">No comments yet.</Typography>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Loader Backdrop */}
+      <Backdrop
+        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={returning}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
         >
-          {returning ? "Marking..." : "Mark as Returned ✅"}
-        </button>
-      ) : (
-        <p className="returned-label">
-          ✅ This item has been marked as returned.
-        </p>
-      )}
-
-      <hr />
-      <h2>Comments</h2>
-
-      {/* 🔵 Add Comment Form */}
-      <form className="comment-form" onSubmit={handleAddComment}>
-        <textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Write a comment..."
-          rows="3"
-          disabled={item.returned}
-        ></textarea>
-        <button type="submit" disabled={posting }             className={item.returned ? "disabled-btn" : ""}
-
->
-          {posting ? "Posting..." : "Add Comment"}
-        </button>
-      </form>
-
-      {/* 🟨 Comments List */}
-      {loading ? (
-        <p>Loading comments...</p>
-      ) : comments.length > 0 ? (
-        <div className="comments-list">
-          {comments.map((c) => (
-            <div key={c._id} className="comment-box">
-              <p>{c.content}</p>
-              <small>By: {c.userId?.fullName || "Anonymous"}</small>
-              <small style={{ display: "block", color: "#777" }}>
-                {new Date(c.createdAt).toLocaleString()}
-              </small>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p>No comments yet.</p>
-      )}
-    </div>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 };
 

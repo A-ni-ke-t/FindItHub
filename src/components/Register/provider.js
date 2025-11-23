@@ -1,9 +1,14 @@
-import  { useMemo, useState } from "react";
-import "./Register.scss";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { registerUser, verifyOtp } from "../../helpers/fakebackend_helper";
-import Swal from "sweetalert2";
+import { register } from "./service";
+import { verifyOtp } from "../../helpers/fakebackend_helper";
 import generateContext from "../../common/context/generateContext";
+
+/**
+ * Register Provider (Refactored)
+ * - Removed SweetAlert2
+ * - Added Snackbar + Backdrop Loader system (controlled by Register.js)
+ */
 
 const useRegisterProvider = () => {
   const [formData, setFormData] = useState({
@@ -15,19 +20,36 @@ const useRegisterProvider = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [otpStep, setOtpStep] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
+
   const navigate = useNavigate();
+
+  // 🔹 Helper function to show snackbars
+  const showSnackbar = (message, severity = "info") => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // 🔹 Step 1: Handle Registration
   const handleRegister = async (e) => {
     e.preventDefault();
     const { fullName, emailAddress, password } = formData;
 
     if (!fullName || !emailAddress || !password) {
       setError("Please fill in all fields");
+      showSnackbar("Please fill in all fields", "error");
       return;
     }
 
@@ -35,93 +57,75 @@ const useRegisterProvider = () => {
     setLoading(true);
 
     try {
-      const response = await registerUser(formData);
-      console.log("Register response:", response);
+      const response = await register(formData);
+      const resData = response?.data || response;
+      console.log("Register API Response:", resData);
 
-      const resData = response?.data || response; // works for both raw or processed responses
-
-      if (resData.status === 200) {
-        await Swal.fire({
-          title: "OTP Sent!",
-          text: "An OTP has been sent to your registered email. Please verify to complete registration.",
-          icon: "success",
-          confirmButtonText: "Verify Now",
-          confirmButtonColor: "#3085d6",
-        });
-
-        setOtpStep(true); // Move to OTP verification step
+      if (resData.status === 200 || resData.success) {
+        setOtpStep(true);
+        showSnackbar(
+          "OTP sent to your email. Please verify to complete registration.",
+          "success"
+        );
       } else {
-        Swal.fire({
-          title: "Error",
-          text: resData?.message || "Something went wrong. Please try again.",
-          icon: "error",
-          confirmButtonColor: "#d33",
-        });
+        showSnackbar(
+          resData?.message || "Something went wrong during registration.",
+          "error"
+        );
       }
     } catch (err) {
       console.error("Register error:", err);
-      Swal.fire({
-        title: "Registration Failed",
-        text:
-          err.response?.data?.message ||
-          "Something went wrong. Please try again later.",
-        icon: "error",
-        confirmButtonColor: "#d33",
-      });
+      showSnackbar(
+        err.response?.data?.message ||
+          "Registration failed. Please try again later.",
+        "error"
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // 🔹 Step 2: Handle OTP Verification
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
 
     if (!otp) {
       setError("Please enter OTP");
+      showSnackbar("Please enter OTP", "error");
       return;
     }
 
     setLoading(true);
+
     try {
       const otpData = { emailAddress: formData.emailAddress, otp };
       const response = await verifyOtp(otpData);
-      console.log("Verify OTP Response:", response);
+      const resData = response?.data || response;
 
-      const resData = response?.data || response; // supports both raw & helper responses
+      console.log("Verify OTP Response:", resData);
 
       if (resData.status === 200 && resData.success) {
-        await Swal.fire({
-          title: "Email Verified 🎉",
-          text: resData.message || "Your email has been successfully verified!",
-          icon: "success",
-          confirmButtonText: "Go to Login",
-          confirmButtonColor: "#3085d6",
-        });
-
-        navigate("/");
+        showSnackbar(
+          resData.message || "Your email has been verified successfully!",
+          "success"
+        );
+        setTimeout(() => navigate("/"), 1000);
       } else {
-        Swal.fire({
-          title: "Invalid OTP",
-          text: resData.message || "Please try again with the correct OTP.",
-          icon: "error",
-          confirmButtonColor: "#d33",
-        });
+        showSnackbar(resData.message || "Invalid OTP. Please try again.", "error");
       }
     } catch (err) {
-      console.error("Verify OTP error:", err);
-      Swal.fire({
-        title: "Verification Failed",
-        text:
-          err.response?.data?.message ||
+      console.error("OTP verification error:", err);
+      showSnackbar(
+        err.response?.data?.message ||
           "Something went wrong. Please try again later.",
-        icon: "error",
-        confirmButtonColor: "#d33",
-      });
+        "error"
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // 🔹 Return everything for context
   return useMemo(
     () => ({
       otpStep,
@@ -134,6 +138,9 @@ const useRegisterProvider = () => {
       setOtp,
       setOtpStep,
       otp,
+      snackbar,
+      showSnackbar,
+      handleCloseSnackbar,
     }),
     [
       otpStep,
@@ -146,6 +153,7 @@ const useRegisterProvider = () => {
       setOtp,
       setOtpStep,
       otp,
+      snackbar,
     ]
   );
 };
