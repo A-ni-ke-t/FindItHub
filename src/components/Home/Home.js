@@ -24,7 +24,7 @@ import { useNavigate } from "react-router-dom";
 
 const Home = () => {
   const [items, setItems] = useState([]);
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState("list");
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");

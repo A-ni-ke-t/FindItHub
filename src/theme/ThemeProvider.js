@@ -28,6 +28,7 @@ const AppThemeProvider = ({ children }) => {
                 background: {
                   default: "#f9f9f9",
                   paper: "#ffffff",
+                  color: "#000000"
                 },
                 primary: { main: "#00bcd4" },
               }
@@ -35,6 +36,7 @@ const AppThemeProvider = ({ children }) => {
                 background: {
                   default: "#121212",
                   paper: "#1e1e1e",
+                  color: "#ffffff"
                 },
                 primary: { main: "#00acc1" },
               }),
