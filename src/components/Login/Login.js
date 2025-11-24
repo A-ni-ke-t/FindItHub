@@ -1,3 +1,4 @@
+// src/components/Auth/Login.jsx
 import React, { useState } from "react";
 import {
   Box,
@@ -17,17 +18,15 @@ import {
   CircularProgress,
   Avatar,
 } from "@mui/material";
-import {
-  Visibility,
-  VisibilityOff,
-  Email,
-  Lock,
-  Search,
-} from "@mui/icons-material";
+import { Visibility, VisibilityOff, Email, Lock, Search } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { login, verifyOtp } from "../../helpers/fakebackend_helper";
+import { useTheme } from "@mui/material/styles";
+import { useColorMode } from "../../theme/ThemeProvider";
 
 const Login = () => {
+  const theme = useTheme();
+  const { mode } = useColorMode(); // for any mode-specific tweaks (optional)
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
@@ -115,22 +114,32 @@ const Login = () => {
 
   return (
     <Box
-      sx={{
+      sx={(t) => ({
         minHeight: "100vh",
-        background: "linear-gradient(to bottom right, #e0f7fa, #ffffff)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         p: 2,
-      }}
+        // subtle gradient using theme colors for nicer depth
+        background: `linear-gradient(135deg, ${t.palette.background.default} 0%, ${t.custom?.surfaceElevated ?? t.palette.background.elevated} 100%)`,
+        color: t.palette.text.primary,
+      })}
     >
       {/* Logo Section */}
       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-        <Avatar sx={{ bgcolor: "#00bcd4", width: 40, height: 40, mr: 1 }}>
-          <Search sx={{ color: "#fff" }} />
+        <Avatar
+          sx={{
+            bgcolor: theme.palette.primary.main,
+            width: 40,
+            height: 40,
+            mr: 1,
+            color: theme.palette.primary.contrastText,
+          }}
+        >
+          <Search />
         </Avatar>
-        <Typography variant="h5" fontWeight="bold" color="#007c91">
+        <Typography variant="h5" fontWeight="bold" sx={{ color: theme.palette.text.primary }}>
           FindItHub
         </Typography>
       </Box>
@@ -140,7 +149,14 @@ const Login = () => {
       </Typography>
 
       {/* Login Card */}
-      <Card sx={{ width: 380, borderRadius: 4, boxShadow: 3 }}>
+      <Card
+        sx={{
+          width: { xs: "92%", sm: 420 },
+          borderRadius: 4,
+          boxShadow: 3,
+          backgroundColor: theme.palette.background.paper,
+        }}
+      >
         <CardContent>
           {!otpStep ? (
             <form onSubmit={handleLoginSubmit}>
@@ -148,8 +164,7 @@ const Login = () => {
                 variant="h5"
                 fontWeight="bold"
                 align="center"
-                color="#374151"
-                mb={2}
+                sx={{ color: theme.palette.text.primary, mb: 2 }}
               >
                 Login
               </Typography>
@@ -172,10 +187,11 @@ const Login = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Email />
+                      <Email color="action" />
                     </InputAdornment>
                   ),
                 }}
+                inputProps={{ "aria-label": "email address" }}
               />
 
               <TextField
@@ -190,17 +206,22 @@ const Login = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Lock />
+                      <Lock color="action" />
                     </InputAdornment>
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                        aria-label={showPassword ? "hide password" : "show password"}
+                      >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
+                inputProps={{ "aria-label": "password" }}
               />
 
               <Box
@@ -211,8 +232,8 @@ const Login = () => {
                   mt: 1,
                 }}
               >
-                <FormControlLabel control={<Checkbox />} label="Remember me" />
-                <Link href="#" underline="hover" color="#00bcd4">
+                <FormControlLabel control={<Checkbox color="primary" />} label="Remember me" />
+                <Link href="#" underline="hover" sx={{ color: theme.palette.primary.main }}>
                   Forgot password?
                 </Link>
               </Box>
@@ -221,15 +242,13 @@ const Login = () => {
                 fullWidth
                 variant="contained"
                 type="submit"
+                color="primary"
                 sx={{
                   mt: 2,
                   mb: 1,
-                  backgroundColor: "#00bcd4",
-                  "&:hover": { backgroundColor: "#0097a7" },
                   borderRadius: 2,
                   py: 1.2,
                   fontSize: "1rem",
-                  textTransform: "none",
                 }}
               >
                 Login
@@ -237,7 +256,7 @@ const Login = () => {
 
               <Typography align="center" sx={{ mt: 2, color: "text.secondary" }}>
                 Don’t have an account?{" "}
-                <Link href="/register" underline="hover" color="#00bcd4">
+                <Link href="/register" underline="hover" sx={{ color: theme.palette.primary.main }}>
                   Sign Up
                 </Link>
               </Typography>
@@ -248,8 +267,7 @@ const Login = () => {
                 variant="h5"
                 fontWeight="bold"
                 align="center"
-                color="#374151"
-                mb={2}
+                sx={{ color: theme.palette.text.primary, mb: 2 }}
               >
                 Verify OTP
               </Typography>
@@ -265,15 +283,15 @@ const Login = () => {
                 placeholder="Enter 6-digit OTP"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
+                inputProps={{ "aria-label": "otp" }}
               />
 
               <Button
                 fullWidth
                 variant="contained"
+                color="primary"
                 sx={{
                   mt: 3,
-                  backgroundColor: "#00bcd4",
-                  "&:hover": { backgroundColor: "#0097a7" },
                 }}
                 type="submit"
               >
@@ -283,8 +301,11 @@ const Login = () => {
               <Button
                 fullWidth
                 variant="text"
-                sx={{ mt: 1, color: "#00bcd4" }}
-                onClick={() => setOtpStep(false)}
+                sx={{ mt: 1, color: theme.palette.primary.main }}
+                onClick={() => {
+                  setOtpStep(false);
+                  setOtp("");
+                }}
               >
                 ← Back to Login
               </Button>
@@ -310,7 +331,11 @@ const Login = () => {
       </Snackbar>
 
       {/* Loader Backdrop */}
-      <Backdrop sx={(theme) => ({ color: "#fff", zIndex: theme.zIndex.drawer + 1 })} open={loading}>
+      <Backdrop
+        sx={(t) => ({ color: t.palette.primary.contrastText, zIndex: t.zIndex.drawer + 1 })}
+        open={loading}
+        aria-live="polite"
+      >
         <CircularProgress color="inherit" />
       </Backdrop>
     </Box>

@@ -1,3 +1,4 @@
+// src/components/ItemDetails/ItemDetails.jsx
 import React, { useEffect, useState } from "react";
 import {
   Card,
@@ -14,16 +15,21 @@ import {
   Box,
   Paper,
   Stack,
+  Chip,
+  Avatar,
+  IconButton,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { useLocation, useNavigate } from "react-router-dom";
 import {
   getItemComments,
   postItemComment,
   markItemAsReturned,
 } from "../../helpers/fakebackend_helper";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useTheme } from "@mui/material/styles";
 
 const ItemDetails = () => {
+  const theme = useTheme();
   const { state } = useLocation();
   const navigate = useNavigate();
   const item = state?.item;
@@ -45,7 +51,7 @@ const ItemDetails = () => {
   const handleCloseSnackbar = () =>
     setSnackbar((prev) => ({ ...prev, open: false }));
 
-  // 🟩 Fetch comments
+  // Fetch comments
   const fetchComments = async () => {
     if (!item?._id) return;
     setLoading(true);
@@ -64,9 +70,10 @@ const ItemDetails = () => {
 
   useEffect(() => {
     fetchComments();
-  }, [item]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item?._id]);
 
-  // 🟦 Add new comment
+  // Add new comment
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return showSnackbar("Please enter a comment.", "warning");
@@ -90,7 +97,7 @@ const ItemDetails = () => {
     }
   };
 
-  // 🟨 Mark as returned
+  // Mark as returned
   const handleMarkAsReturned = async () => {
     if (!item?._id) return;
     setReturning(true);
@@ -115,162 +122,255 @@ const ItemDetails = () => {
 
   if (!item)
     return (
-      <Typography sx={{ p: 4 }}>
-        ⚠️ No item data found. Please go back to the home page.
-      </Typography>
+      <Box sx={{ p: 4 }}>
+        <Typography variant="body1">⚠️ No item data found. Please go back to the home page.</Typography>
+      </Box>
     );
 
+  // Helper: author initials
+  const initials = (name) =>
+    name
+      ? name
+          .split(" ")
+          .map((n) => n[0])
+          .slice(0, 2)
+          .join("")
+          .toUpperCase()
+      : "U";
+
   return (
-    <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
+    <Box
+      sx={{
+        p: { xs: 2, sm: 3 },
+        // allow the component to take full width of its parent
+        width: "100%",
+        boxSizing: "border-box",
+      }}
+    >
       <Card
         sx={{
-          width: "100%",
-          maxWidth: 700,
-          borderRadius: 4,
-          boxShadow: 4,
-          p: 2,
+          width: "100%", // FULL WIDTH as requested
+          borderRadius: 3,
+          boxShadow: 6,
+          overflow: "visible",
+          bgcolor: theme.palette.background.paper,
         }}
       >
-        {/* Back Button */}
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-          <Button
-            variant="text"
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate("/home")}
-            sx={{ textTransform: "none", color: "#00bcd4" }}
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          {/* Header row */}
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            justifyContent="space-between"
+            alignItems={{ xs: "flex-start", sm: "center" }}
+            spacing={2}
+            sx={{ mb: 2 }}
           >
-            Back to Home
-          </Button>
-        </Stack>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <IconButton
+                onClick={() => navigate("/home")}
+                aria-label="back"
+                size="medium"
+                sx={{
+                  borderRadius: 1,
+                  bgcolor: theme.palette.action.selected,
+                  color: theme.palette.text.primary,
+                  "&:hover": { backgroundColor: theme.palette.action.hover },
+                }}
+              >
+                <ArrowBackIcon />
+              </IconButton>
 
-        {/* Image */}
-        {item.image && (
-          <CardMedia
-            component="img"
-            height="220"
-            image={item.image}
-            alt={item.title}
-            sx={{
-              objectFit: "cover",
-              borderRadius: 2,
-              mb: 2,
-            }}
-          />
-        )}
+              <Box>
+                <Typography variant="h5" fontWeight={700}>
+                  {item.title}
+                </Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="body2" color="text.secondary">
+                    {item.location}
+                  </Typography>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    {new Date(item.createdAt || item.date || Date.now()).toLocaleString()}
+                  </Typography>
+                </Stack>
+              </Box>
+            </Stack>
 
-        {/* Details */}
-        <CardContent sx={{ p: 0 }}>
-          <Typography variant="h5" fontWeight="bold" gutterBottom>
-            {item.title}
-          </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip
+                label={item.status || "Lost"}
+                sx={{
+                  px: 1.5,
+                  py: 0.5,
+                  fontWeight: 700,
+                  backgroundColor:
+                    item.status === "Returned"
+                      ? theme.custom?.status?.returned ?? theme.palette.success.main
+                      : item.status === "Found"
+                      ? theme.custom?.status?.found ?? theme.palette.warning.main
+                      : item.status === "Lost"
+                      ? theme.custom?.status?.lost ?? theme.palette.error.main
+                      : theme.palette.primary.main,
+                  color: theme.custom?.surfaceContrast?.onSurface ?? theme.palette.primary.contrastText,
+                }}
+              />
 
-          <Typography variant="body1" sx={{ mb: 1.5 }}>
-            <strong>Description:</strong> {item.description}
-          </Typography>
+              {!item.returned && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleMarkAsReturned}
+                  disabled={returning}
+                  sx={{ textTransform: "none" }}
+                >
+                  {returning ? "Marking..." : "Mark as Returned"}
+                </Button>
+              )}
+            </Stack>
+          </Stack>
 
-          <Typography variant="body2">
-            📍 <strong>Location:</strong> {item.location}
-          </Typography>
-          <Typography variant="body2">
-            👤 <strong>Reported By:</strong> {item.createdBy?.fullName}
-          </Typography>
-          <Typography variant="body2">
-            ✉️ <strong>Email:</strong> {item.createdBy?.emailAddress}
-          </Typography>
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            🗓 <strong>Reported On:</strong>{" "}
-            {new Date(item.createdAt).toLocaleString()}
-          </Typography>
-
-          {!item.returned ? (
-            <Button
-              variant="contained"
-              color="success"
-              fullWidth
-              onClick={handleMarkAsReturned}
-              disabled={returning}
+          {/* Image: responsive heights for mobile/desktop */}
+          {item.image && (
+            <Box
               sx={{
-                mt: 2,
-                textTransform: "none",
-                backgroundColor: "#00bcd4",
-                "&:hover": { backgroundColor: "#0097a7" },
+                width: "100%",
+                overflow: "hidden",
+                borderRadius: 2,
+                mb: 2,
+                // ensure the image container doesn't collapse
+                display: "block",
               }}
             >
-              {returning ? "Marking..." : "Mark as Returned ✅"}
-            </Button>
-          ) : (
-            <Alert severity="success" sx={{ mt: 2 }}>
-              ✅ This item has been marked as returned.
-            </Alert>
+              <CardMedia
+                component="img"
+                image={item.image}
+                alt={item.title}
+                sx={{
+                  width: "100%",
+                  // specific heights for different breakpoints (mobile -> desktop)
+                  height: { xs: 200, sm: 260, md: 340 },
+                  objectFit: "cover",
+                  display: "block",
+                }}
+              />
+            </Box>
           )}
+
+          {/* Description & metadata */}
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body1" sx={{ mb: 1.5 }}>
+              <strong>Description:</strong> {item.description}
+            </Typography>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Reported by:</strong> {item.createdBy?.fullName || "Unknown"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Email:</strong> {item.createdBy?.emailAddress || "—"}
+              </Typography>
+            </Stack>
+          </Box>
 
           <Divider sx={{ my: 3 }} />
 
-          {/* Comments Section */}
-          <Typography variant="h6" gutterBottom>
-            Comments
-          </Typography>
+          {/* Comments section */}
+          <Box>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+              <Typography variant="h6">Comments</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {comments.length} comment{comments.length !== 1 ? "s" : ""}
+              </Typography>
+            </Stack>
 
-          <form onSubmit={handleAddComment}>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              variant="outlined"
-              placeholder="Write a comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              disabled={item.returned}
-            />
-            <Button
-              variant="contained"
-              sx={{
-                mt: 2,
-                textTransform: "none",
-                backgroundColor: "#00bcd4",
-                "&:hover": { backgroundColor: "#0097a7" },
-              }}
-              type="submit"
-              disabled={posting || item.returned}
-            >
-              {posting ? "Posting..." : "Add Comment"}
-            </Button>
-          </form>
+            <Box component="form" onSubmit={handleAddComment} sx={{ mb: 2 }}>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                variant="outlined"
+                placeholder={item.returned ? "Comments are disabled for returned items" : "Write a comment..."}
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                disabled={posting || item.returned}
+                sx={{
+                  mb: 1.5,
+                  backgroundColor: theme.custom?.surfaceElevated ?? theme.palette.background.surface,
+                  borderRadius: 1,
+                }}
+                inputProps={{ "aria-label": "add comment" }}
+              />
 
-          {/* Comments List */}
-          <Box sx={{ mt: 3 }}>
-            {loading ? (
-              <Typography>Loading comments...</Typography>
-            ) : comments.length > 0 ? (
-              comments.map((c) => (
-                <Paper
-                  key={c._id}
-                  elevation={1}
-                  sx={{
-                    p: 2,
-                    mb: 1.5,
-                    borderRadius: 2,
-                    backgroundColor: "#f9f9f9",
+              <Stack direction="row" spacing={1} justifyContent="flex-end">
+                <Button
+                  variant="text"
+                  onClick={() => {
+                    setNewComment("");
                   }}
+                  disabled={posting}
                 >
-                  <Typography>{c.content}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    By: {c.userId?.fullName || "Anonymous"} •{" "}
-                    {new Date(c.createdAt).toLocaleString()}
-                  </Typography>
-                </Paper>
-              ))
-            ) : (
-              <Typography color="text.secondary">No comments yet.</Typography>
-            )}
+                  Cancel
+                </Button>
+
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={posting || item.returned}
+                  startIcon={posting ? <CircularProgress size={16} /> : null}
+                  sx={{ textTransform: "none" }}
+                >
+                  {posting ? "Posting..." : "Add Comment"}
+                </Button>
+              </Stack>
+            </Box>
+
+            <Box>
+              {loading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+                  <CircularProgress />
+                </Box>
+              ) : comments.length > 0 ? (
+                <Stack spacing={1}>
+                  {comments.map((c) => (
+                    <Paper
+                      key={c._id}
+                      elevation={1}
+                      sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        backgroundColor: theme.custom?.surfaceElevated ?? theme.palette.background.surface,
+                      }}
+                    >
+                      <Stack direction="row" spacing={2} alignItems="flex-start">
+                        <Avatar sx={{ bgcolor: theme.palette.primary.main, color: theme.palette.primary.contrastText }}>
+                          {initials(c.userId?.fullName)}
+                        </Avatar>
+
+                        <Box sx={{ flex: 1 }}>
+                          <Typography sx={{ fontWeight: 600 }}>{c.userId?.fullName || "Anonymous"}</Typography>
+                          <Typography sx={{ mb: 1 }}>{c.content}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(c.createdAt).toLocaleString()}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </Paper>
+                  ))}
+                </Stack>
+              ) : (
+                <Typography color="text.secondary">No comments yet. Be the first to comment!</Typography>
+              )}
+            </Box>
           </Box>
         </CardContent>
       </Card>
 
-      {/* Loader Backdrop */}
+      {/* Backdrop for long actions */}
       <Backdrop
-        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        sx={(t) => ({ color: t.palette.primary.contrastText, zIndex: t.zIndex.drawer + 1 })}
         open={returning}
+        aria-live="polite"
       >
         <CircularProgress color="inherit" />
       </Backdrop>
@@ -282,11 +382,7 @@ const ItemDetails = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
-        >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
           {snackbar.message}
         </Alert>
       </Snackbar>
