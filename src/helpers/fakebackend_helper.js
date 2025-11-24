@@ -7,7 +7,7 @@ export const registerUser = (data) => post(`${url.REGISTER_USER}`, data);
 export const changePassword = (data) => post(`${url.CHANGE_PASSWORD}`, data);
 export const logout = user => post(`${url.LOGOUT_USER}`, user)
 export const addItem = data => post(`${url.ADD_ITEMS}`, data)
-export const getItems = () => get(`${url.GET_ITEMS}`)
+export const getItems = (data) => get(`${url.GET_ITEMS}?${data}`)
 export const getItemComments = (id) => get(`${url.GET_COMMENTS}/${id}/comments`)
 export const postItemComment = (id,data) => post(`${url.POST_ITEM}/${id}/comments`, data)
 export const markItemAsReturned = (id,data) => patch(`${url.RETURNED_ITEM}/${id}/return`, data)

@@ -227,12 +227,12 @@ const Login = () => {
               <Box
                 sx={{
                   display: "flex",
-                  justifyContent: "space-between",
+                  justifyContent: "end",
                   alignItems: "center",
                   mt: 1,
                 }}
               >
-                <FormControlLabel control={<Checkbox color="primary" />} label="Remember me" />
+                {/* <FormControlLabel control={<Checkbox color="primary" />} label="Remember me" /> */}
                 <Link href="#" underline="hover" sx={{ color: theme.palette.primary.main }}>
                   Forgot password?
                 </Link>
