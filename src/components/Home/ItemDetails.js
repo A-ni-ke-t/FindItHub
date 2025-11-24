@@ -18,6 +18,7 @@ import {
   Chip,
   Avatar,
   IconButton,
+  Dialog, 
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import {
@@ -27,6 +28,7 @@ import {
 } from "../../helpers/fakebackend_helper";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
+import CloseIcon from "@mui/icons-material/Close";
 
 const ItemDetails = () => {
   const theme = useTheme();
@@ -44,6 +46,11 @@ const ItemDetails = () => {
     message: "",
     severity: "info",
   });
+
+  const [open, setOpen] = useState(false);
+
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
   const showSnackbar = (message, severity = "info") =>
     setSnackbar({ open: true, message, severity });
@@ -231,29 +238,62 @@ const ItemDetails = () => {
 
           {/* Image: responsive heights for mobile/desktop */}
           {item.image && (
+            <>
             <Box
-              sx={{
-                width: "100%",
-                overflow: "hidden",
-                borderRadius: 2,
-                mb: 2,
-                // ensure the image container doesn't collapse
-                display: "block",
-              }}
-            >
-              <CardMedia
-                component="img"
-                image={item.image}
-                alt={item.title}
-                sx={{
-                  width: "100%",
-                  // specific heights for different breakpoints (mobile -> desktop)
-                  height: { xs: 200, sm: 260, md: 340 },
-                  objectFit: "cover",
-                  display: "block",
-                }}
-              />
-            </Box>
+        sx={{
+          width: "100%",
+          overflow: "hidden",
+          borderRadius: 2,
+          mb: 2,
+          cursor: "pointer",
+          display: "block",
+        }}
+        onClick={handleOpen} // open modal on click
+      >
+        <CardMedia
+          component="img"
+          image={item.image}
+          alt={item.title}
+          sx={{
+            width: "100%",
+            height: { xs: 200, sm: 260, md: 340 },
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
+      </Box>
+
+      {/* Fullscreen modal */}
+      <Dialog open={open} onClose={handleClose} maxWidth="lg">
+        <Box sx={{ position: "relative" }}>
+          <IconButton
+            onClick={handleClose}
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              color: "white",
+              backgroundColor: "rgba(0,0,0,0.4)",
+              "&:hover": { backgroundColor: "rgba(0,0,0,0.6)" },
+              zIndex: 10,
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <CardMedia
+            component="img"
+            image={item.image}
+            alt={item.title}
+            sx={{
+              width: "100%",
+              height: "auto",
+              maxHeight: "90vh",
+              objectFit: "contain",
+              backgroundColor: "black",
+            }}
+          />
+        </Box>
+      </Dialog></>
           )}
 
           {/* Description & metadata */}
