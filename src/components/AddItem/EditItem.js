@@ -1,10 +1,32 @@
-import React, { useState, useEffect } from "react";
+// src/components/EditItem/EditItem.jsx
+import React, { useEffect, useState, useRef } from "react";
+import {
+  Box,
+  Card,
+  CardContent,
+  CardMedia,
+  Typography,
+  TextField,
+  Button,
+  Stack,
+  Backdrop,
+  CircularProgress,
+  Snackbar,
+  Alert,
+  Avatar,
+  useMediaQuery,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { useLocation, useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
-import "./AddItem.scss";
 import { patchItem, uploadFile } from "../../helpers/fakebackend_helper";
+import { useColorMode } from "../../theme/ThemeProvider";
 
 const EditItem = () => {
+  const theme = useTheme();
+  const { mode } = useColorMode();
+  const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
+  const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
+
   const { state } = useLocation();
   const navigate = useNavigate();
   const item = state?.item;
@@ -15,149 +37,313 @@ const EditItem = () => {
     location: "",
     image: "",
   });
-
   const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, severity: "info", message: "" });
+
+  const objectUrlRef = useRef(null);
 
   useEffect(() => {
     if (item) {
       setFormData({
-        title: item.title,
-        description: item.description,
-        location: item.location,
+        title: item.title || "",
+        description: item.description || "",
+        location: item.location || "",
         image: item.image || "",
       });
+      setPreviewUrl(item.image || "");
     }
   }, [item]);
 
+  // cleanup object URL on unmount or when file changes
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+    };
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((p) => ({ ...p, [name]: value }));
   };
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const f = e.target.files?.[0] || null;
+    setFile(f);
+
+    // revoke previous
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+
+    if (f) {
+      const url = URL.createObjectURL(f);
+      objectUrlRef.current = url;
+      setPreviewUrl(url);
+    } else {
+      setPreviewUrl(formData.image || "");
+    }
   };
+
+  const showSnackbar = (message, severity = "info") => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => setSnackbar((s) => ({ ...s, open: false }));
 
   const uploadImage = async () => {
     if (!file) return formData.image;
-    const formDataToSend = new FormData();
-    formDataToSend.append("file", file);
-
     try {
-      const uploadResponse = await uploadFile(formDataToSend);
-      const imagePath = uploadResponse?.data?.[0] || "";
-      return imagePath;
+      const form = new FormData();
+      form.append("file", file);
+      const uploadResponse = await uploadFile(form);
+      // adapt to your API: expecting uploadResponse.data[0] or uploadResponse.data.url, etc.
+      const imagePath = uploadResponse?.data?.[0] || uploadResponse?.data?.url || "";
+      return imagePath || formData.image;
     } catch (err) {
-      console.error("Image upload failed:", err);
-      Swal.fire("Error", "Failed to upload image.", "error");
+      console.error("upload error", err);
+      showSnackbar("Image upload failed.", "error");
       return formData.image;
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    if (!item?._id) {
+      showSnackbar("Missing item ID.", "error");
+      return;
+    }
+    // basic validation
+    if (!formData.title.trim() || !formData.description.trim() || !formData.location.trim()) {
+      showSnackbar("Please fill in all required fields.", "warning");
+      return;
+    }
 
+    setLoading(true);
     try {
       const imagePath = await uploadImage();
-      const updatedData = { ...formData, image: imagePath };
+      const updated = { ...formData, image: imagePath };
 
-      const response = await patchItem(item._id, updatedData);
-      if (response.status === 200 || response.success) {
-        Swal.fire({
-          title: "Updated!",
-          text: "Item updated successfully.",
-          icon: "success",
-          confirmButtonColor: "#3085d6",
-        }).then(() => navigate("/dashboard"));
+      const response = await patchItem(item._id, updated);
+      const resData = response?.data ?? response;
+
+      if (resData.status === 200 || resData.success) {
+        showSnackbar("Item updated successfully!", "success");
+        // small delay so user can see snackbar
+        setTimeout(() => navigate("/home"), 800);
       } else {
-        Swal.fire("Error", response?.message || "Failed to update item.", "error");
+        showSnackbar(resData.message || "Failed to update item.", "error");
       }
-    } catch (error) {
-      console.error("Edit error:", error);
-      Swal.fire("Error", "Something went wrong while updating.", "error");
+    } catch (err) {
+      console.error(err);
+      showSnackbar("Something went wrong while updating the item.", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!item)
+  if (!item) {
     return (
-      <p style={{ padding: "2rem" }}>⚠️ No item data found. Go back to home page.</p>
+      <Box sx={{ p: 4 }}>
+        <Typography>⚠️ No item data found. Go back to the home page.</Typography>
+      </Box>
     );
+  }
 
   return (
-      <div className="edititem-wrapper">
+    <Box
+      sx={{
+        p: { xs: 2, sm: 3 },
+        width: "100%",
+        boxSizing: "border-box",
+        display: "flex",
+        justifyContent: "center",
+      }}
+    >
+      <Card
+        sx={{
+          width: "100%",
+          maxWidth: 920,
+          borderRadius: 3,
+          boxShadow: 6,
+          bgcolor: theme.palette.background.paper,
+        }}
+      >
+        <CardContent>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={3}
+            alignItems="flex-start"
+          >
+            {/* Left: Form */}
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+                Edit Item
+              </Typography>
 
-    <div className="additem-container" >
-      <h1>Edit Item</h1>
-      <form onSubmit={handleSubmit} className="additem-form">
-        <label>
-          Item Title:
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-          />
-        </label>
+              <Box component="form" onSubmit={handleSubmit} noValidate>
+                <TextField
+                  label="Item Title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  margin="normal"
+                />
 
-        <label>
-          Description:
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            required
-          />
-        </label>
+                <TextField
+                  label="Description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  margin="normal"
+                  multiline
+                  minRows={4}
+                />
 
-        <label>
-          Location Found/Lost:
-          <input
-            type="text"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            required
-          />
-        </label>
+                <TextField
+                  label="Location Found/Lost"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  margin="normal"
+                />
 
-        <label>
-          Upload New Image (optional):
-          <input type="file" accept="image/*" onChange={handleFileChange} />
-        </label>
+                <Box sx={{ mt: 2 }}>
+                  <input
+                    accept="image/*"
+                    id="edititem-file"
+                    type="file"
+                    onChange={handleFileChange}
+                    style={{ display: "none" }}
+                  />
+                  <label htmlFor="edititem-file">
+                    <Button
+                      component="span"
+                      variant="outlined"
+                      startIcon={<Avatar sx={{ bgcolor: theme.palette.primary.main, width: 24, height: 24 }}>+</Avatar>}
+                      sx={{
+                        textTransform: "none",
+                        borderColor: theme.palette.divider,
+                        color: theme.palette.text.primary,
+                        "&:hover": { backgroundColor: theme.palette.action.hover },
+                      }}
+                    >
+                      Upload New Image
+                    </Button>
+                  </label>
 
-       {file ? (
-  <img
-    src={URL.createObjectURL(file)}
-    alt="Preview"
-    style={{ width: "150px", marginTop: "10px", borderRadius: "8px" }}
-  />
-) : (
-  formData.image && (
-    <img
-      src={formData.image}
-      alt="Current item"
-      style={{ width: "150px", marginTop: "10px", borderRadius: "8px" }}
-    />
-  )
-)}
+                  {file && (
+                    <Typography variant="body2" sx={{ mt: 1, color: theme.palette.text.secondary }}>
+                      Selected: <strong>{file.name}</strong>
+                    </Typography>
+                  )}
+                </Box>
 
-        {file && (
-          <p style={{ color: "green" }}>
-            Selected: <strong>{file.name}</strong>
-          </p>
-        )}
+                <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    sx={{
+                      textTransform: "none",
+                      backgroundColor: theme.palette.primary.main,
+                      color: theme.palette.primary.contrastText,
+                      "&:hover": { backgroundColor: theme.palette.action.selected },
+                    }}
+                    disabled={loading}
+                  >
+                    {loading ? <CircularProgress size={20} color="inherit" /> : "Save Changes"}
+                  </Button>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Saving..." : "Update Item"}
-        </button>
-      </form>
-    </div>
-    </div>
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigate(-1)}
+                    sx={{
+                      textTransform: "none",
+                      borderColor: theme.palette.divider,
+                      color: theme.palette.text.primary,
+                    }}
+                    disabled={loading}
+                  >
+                    Cancel
+                  </Button>
+                </Stack>
+              </Box>
+            </Box>
+
+            {/* Right: Image preview */}
+            <Box
+              sx={{
+                width: { xs: "100%", md: 340 },
+                flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 1.5,
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                Preview
+              </Typography>
+
+              {previewUrl ? (
+                <CardMedia
+                  component="img"
+                  image={previewUrl}
+                  alt="preview"
+                  sx={{
+                    width: "100%",
+                    height: { xs: 160, sm: 220, md: 280 },
+                    objectFit: "cover",
+                    borderRadius: 2,
+                    boxShadow: 3,
+                  }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    width: "100%",
+                    height: { xs: 160, sm: 220, md: 280 },
+                    borderRadius: 2,
+                    backgroundColor: theme.custom?.surfaceContrast?.muted ?? theme.palette.background.surface,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: theme.palette.text.secondary,
+                  }}
+                >
+                  <Typography variant="body2">No image</Typography>
+                </Box>
+              )}
+
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                Image size will be optimized automatically
+              </Typography>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      <Backdrop sx={{ color: "#fff", zIndex: (t) => t.zIndex.drawer + 1 }} open={loading}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
+
+      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={handleCloseSnackbar}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 };
 
