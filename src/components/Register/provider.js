@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { register } from "./service";
 import { verifyOtp } from "../../helpers/fakebackend_helper";
@@ -25,6 +25,9 @@ const useRegisterProvider = () => {
     message: "",
     severity: "info",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmError, setConfirmError] = useState("");
 
   const navigate = useNavigate();
 
@@ -44,12 +47,27 @@ const useRegisterProvider = () => {
 
   // 🔹 Step 1: Handle Registration
   const handleRegister = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // ⬅️ STOP PAGE RELOAD
+
     const { fullName, emailAddress, password } = formData;
 
+    // 🔹 Required field validation
     if (!fullName || !emailAddress || !password) {
       setError("Please fill in all fields");
       showSnackbar("Please fill in all fields", "error");
+      return;
+    }
+
+    // 🔹 Password validation
+    if (password.length < 6) {
+      showSnackbar("Password must be at least 6 characters.", "warning");
+      return;
+    }
+
+    // 🔹 Confirm password validation
+    if (confirmPassword !== password) {
+      setConfirmError("Passwords do not match");
+      showSnackbar("Passwords do not match.", "error");
       return;
     }
 
@@ -57,11 +75,14 @@ const useRegisterProvider = () => {
     setLoading(true);
 
     try {
+      // 🔹 Call register API
       const response = await register(formData);
       const resData = response?.data || response;
+
       console.log("Register API Response:", resData);
 
       if (resData.status === 200 || resData.success) {
+        // 🔹 Move to OTP step
         setOtpStep(true);
         showSnackbar(
           "OTP sent to your email. Please verify to complete registration.",
@@ -76,7 +97,7 @@ const useRegisterProvider = () => {
     } catch (err) {
       console.error("Register error:", err);
       showSnackbar(
-        err.response?.data?.message ||
+        err?.response?.data?.message ||
           "Registration failed. Please try again later.",
         "error"
       );
@@ -111,7 +132,10 @@ const useRegisterProvider = () => {
         );
         setTimeout(() => navigate("/"), 1000);
       } else {
-        showSnackbar(resData.message || "Invalid OTP. Please try again.", "error");
+        showSnackbar(
+          resData.message || "Invalid OTP. Please try again.",
+          "error"
+        );
       }
     } catch (err) {
       console.error("OTP verification error:", err);
@@ -122,6 +146,30 @@ const useRegisterProvider = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+   // reset confirmError if password changes
+   useEffect(() => {
+    if (confirmPassword && formData.password) {
+      setConfirmError(
+        confirmPassword === formData.password ? "" : "Passwords do not match"
+      );
+    }
+  }, [confirmPassword, formData.password]);
+
+  // wrapper for OTP submit (keeps using provider handleVerifyOtp)
+  const onSubmitOtp = async (e) => {
+    e.preventDefault();
+    if (!otp || otp.toString().trim().length === 0) {
+      showSnackbar("Please enter the OTP.", "warning");
+      return;
+    }
+    try {
+      await handleVerifyOtp();
+      showSnackbar("Verifying OTP...", "info");
+    } catch (err) {
+      showSnackbar(err?.message || "OTP verification failed", "error");
     }
   };
 
@@ -141,6 +189,16 @@ const useRegisterProvider = () => {
       snackbar,
       showSnackbar,
       handleCloseSnackbar,
+      showPassword,
+      setShowPassword,
+      confirmPassword,
+      setConfirmPassword,
+      confirmError,
+      setConfirmError,
+      snackbar,
+      setSnackbar,
+      onSubmitOtp,
+    handleCloseSnackbar,
     }),
     [
       otpStep,
@@ -154,6 +212,16 @@ const useRegisterProvider = () => {
       setOtpStep,
       otp,
       snackbar,
+      showPassword,
+      setShowPassword,
+      confirmPassword,
+      setConfirmPassword,
+      confirmError,
+      setConfirmError,
+      snackbar,
+      setSnackbar,
+      onSubmitOtp,
+    handleCloseSnackbar,
     ]
   );
 };

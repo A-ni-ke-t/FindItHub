@@ -1,5 +1,5 @@
 // src/components/Auth/Register.jsx
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   Box,
   Button,
@@ -40,82 +40,19 @@ const Register = () => {
     error,
     formData,
     handleChange,
-    handleVerifyOtp,
     loading,
     setOtp,
     setOtpStep,
     otp,
+    showPassword,
+    setShowPassword,
+    confirmPassword,
+    setConfirmPassword,
+    confirmError,
+    snackbar,
+    onSubmitOtp,
+    handleCloseSnackbar,
   } = useRegisterContext();
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [confirmError, setConfirmError] = useState("");
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "info",
-  });
-
-  // reset confirmError if password changes
-  useEffect(() => {
-    if (confirmPassword && formData.password) {
-      setConfirmError(confirmPassword === formData.password ? "" : "Passwords do not match");
-    }
-  }, [confirmPassword, formData.password]);
-
-  const showSnackbar = (message, severity = "info") => {
-    setSnackbar({ open: true, message, severity });
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar((s) => ({ ...s, open: false }));
-  };
-
-  // wrapper for register that validates confirm password first
-  const onSubmitRegister = async (e) => {
-    e.preventDefault();
-
-    // basic checks
-    if (!formData.fullName || !formData.emailAddress || !formData.password) {
-      showSnackbar("Please fill all required fields.", "warning");
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      showSnackbar("Password should be at least 6 characters.", "warning");
-      return;
-    }
-
-    if (confirmPassword !== formData.password) {
-      setConfirmError("Passwords do not match");
-      showSnackbar("Passwords do not match.", "error");
-      return;
-    }
-
-    // call provider register handler
-    try {
-      await handleRegister();
-      showSnackbar("Processing your registration...", "info");
-    } catch (err) {
-      // provider should set error as well; show generic fallback
-      showSnackbar(err?.message || "Registration failed", "error");
-    }
-  };
-
-  // wrapper for OTP submit (keeps using provider handleVerifyOtp)
-  const onSubmitOtp = async (e) => {
-    e.preventDefault();
-    if (!otp || otp.toString().trim().length === 0) {
-      showSnackbar("Please enter the OTP.", "warning");
-      return;
-    }
-    try {
-      await handleVerifyOtp();
-      showSnackbar("Verifying OTP...", "info");
-    } catch (err) {
-      showSnackbar(err?.message || "OTP verification failed", "error");
-    }
-  };
 
   return (
     <Box
@@ -128,7 +65,9 @@ const Register = () => {
         p: 2,
         background: (t) =>
           t.palette.mode === "light"
-            ? `linear-gradient(135deg, ${t.palette.background.default} 0%, ${t.custom?.surfaceElevated ?? t.palette.background.paper} 100%)`
+            ? `linear-gradient(135deg, ${t.palette.background.default} 0%, ${
+                t.custom?.surfaceElevated ?? t.palette.background.paper
+              } 100%)`
             : `linear-gradient(135deg, ${t.palette.background.default} 0%, ${t.palette.background.paper} 100%)`,
         color: theme.palette.text.primary,
       }}
@@ -146,7 +85,11 @@ const Register = () => {
         >
           <SearchIcon />
         </Avatar>
-        <Typography variant="h5" fontWeight="700" sx={{ color: theme.palette.text.primary }}>
+        <Typography
+          variant="h5"
+          fontWeight="700"
+          sx={{ color: theme.palette.text.primary }}
+        >
           FindItHub
         </Typography>
       </Box>
@@ -165,7 +108,7 @@ const Register = () => {
       >
         <CardContent>
           {!otpStep ? (
-            <form onSubmit={onSubmitRegister}>
+            <form onSubmit={handleRegister}>
               <Typography
                 variant="h5"
                 fontWeight="700"
@@ -241,7 +184,9 @@ const Register = () => {
                       <IconButton
                         onClick={() => setShowPassword((s) => !s)}
                         edge="end"
-                        aria-label={showPassword ? "hide password" : "show password"}
+                        aria-label={
+                          showPassword ? "hide password" : "show password"
+                        }
                         size="large"
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
@@ -273,7 +218,9 @@ const Register = () => {
                       <IconButton
                         onClick={() => setShowPassword((s) => !s)}
                         edge="end"
-                        aria-label={showPassword ? "hide password" : "show password"}
+                        aria-label={
+                          showPassword ? "hide password" : "show password"
+                        }
                         size="large"
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
@@ -305,9 +252,16 @@ const Register = () => {
                 Register
               </Button>
 
-              <Typography align="center" sx={{ mt: 1, color: "text.secondary" }}>
+              <Typography
+                align="center"
+                sx={{ mt: 1, color: "text.secondary" }}
+              >
                 Already have an account?{" "}
-                <Link href="/login" underline="hover" sx={{ color: theme.palette.primary.main }}>
+                <Link
+                  href="/login"
+                  underline="hover"
+                  sx={{ color: theme.palette.primary.main }}
+                >
                   Login
                 </Link>
               </Typography>
@@ -345,7 +299,9 @@ const Register = () => {
                   sx={{
                     backgroundColor: theme.palette.primary.main,
                     color: theme.palette.primary.contrastText,
-                    "&:hover": { backgroundColor: theme.palette.action.selected },
+                    "&:hover": {
+                      backgroundColor: theme.palette.action.selected,
+                    },
                     textTransform: "none",
                   }}
                   type="submit"
@@ -381,14 +337,21 @@ const Register = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} variant="filled">
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          variant="filled"
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
 
       {/* Loader Backdrop */}
       <Backdrop
-        sx={(t) => ({ color: t.palette.primary.contrastText, zIndex: t.zIndex.drawer + 1 })}
+        sx={(t) => ({
+          color: t.palette.primary.contrastText,
+          zIndex: t.zIndex.drawer + 1,
+        })}
         open={loading}
         aria-live="polite"
       >
