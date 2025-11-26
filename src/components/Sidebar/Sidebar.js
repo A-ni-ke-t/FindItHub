@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// src/components/Sidebar/Sidebar.jsx
+import React, { useState, useEffect } from "react";
 import {
   Drawer,
   List,
@@ -11,6 +12,7 @@ import {
   IconButton,
   Divider,
   Avatar,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Home,
@@ -18,20 +20,60 @@ import {
   Logout,
   Search,
   Menu as MenuIcon,
-  
+  Close as CloseIcon,
 } from "@mui/icons-material";
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTheme } from "@mui/material/styles";
+import { useColorMode } from "../../theme/ThemeProvider";
 
 const drawerWidthExpanded = 240;
 const drawerWidthCollapsed = 80;
 
-const Sidebar = () => {
+const Sidebar = ({ mobileOpen: mobileOpenProp, onMobileOpen, onMobileClose }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [internalMobileOpen, setInternalMobileOpen] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
+  const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
 
-  const user = JSON.parse(localStorage.getItem("userInfo") || "{}");
+  const { mode } = useColorMode();
+
+  // effective open state (controlled by parent if mobileOpenProp provided)
+  const mobileOpen = typeof mobileOpenProp === "boolean" ? mobileOpenProp : internalMobileOpen;
+
+  // helpers to open/close in either controlled or internal mode
+  const handleOpenMobile = () => {
+    if (typeof mobileOpenProp === "boolean") {
+      if (typeof onMobileOpen === "function") onMobileOpen();
+    } else {
+      setInternalMobileOpen(true);
+    }
+  };
+
+  const handleCloseMobile = () => {
+    if (typeof mobileOpenProp === "boolean") {
+      if (typeof onMobileClose === "function") onMobileClose();
+    } else {
+      setInternalMobileOpen(false);
+    }
+  };
+
+  // close temporary drawer when switching to desktop
+  useEffect(() => {
+    if (isMdUp) setInternalMobileOpen(false);
+  }, [isMdUp]);
+
+  // safe parse of userInfo
+  const user = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("userInfo") || "{}");
+    } catch {
+      return {};
+    }
+  })();
   const name = user.fullName || "User";
 
   const menuItems = [
@@ -40,22 +82,8 @@ const Sidebar = () => {
     { name: "Profile", path: "/profile", icon: <AccountCircleIcon /> },
   ];
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: collapsed ? drawerWidthCollapsed : drawerWidthExpanded,
-        flexShrink: 0,
-        "& .MuiDrawer-paper": {
-          width: collapsed ? drawerWidthCollapsed : drawerWidthExpanded,
-          boxSizing: "border-box",
-          backgroundColor: "#141824",
-          color: "#fff",
-          borderRight: "1px solid #1f2233",
-          transition: "width 0.3s",
-        },
-      }}
-    >
+  const drawerContent = (
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <Toolbar
         sx={{
@@ -63,122 +91,246 @@ const Sidebar = () => {
           alignItems: "center",
           justifyContent: collapsed ? "center" : "space-between",
           px: 2,
-          py: 3,
+          py: 2,
         }}
       >
         {!collapsed && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Avatar
               sx={{
-                bgcolor: "#00bcd4",
-                width: 32,
-                height: 32,
+                bgcolor: theme.palette.primary.main,
+                width: 34,
+                height: 34,
+                color: theme.palette.primary.contrastText,
               }}
             >
               <Search fontSize="small" />
             </Avatar>
-            <Typography variant="h6" fontWeight="bold">
+            <Typography variant="h6" fontWeight="bold" sx={{ color: theme.palette.text.primary }} noWrap>
               Find It Hub
             </Typography>
           </Box>
         )}
-        <IconButton
-          onClick={() => setCollapsed(!collapsed)}
-          sx={{ color: "#fff" }}
-        >
-          <MenuIcon />
-        </IconButton>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {/* collapse toggle (desktop) */}
+          {isMdUp && (
+            <IconButton
+              onClick={() => setCollapsed((s) => !s)}
+              sx={{
+                color: theme.palette.text.primary,
+                "&:hover": { backgroundColor: theme.palette.action.hover },
+              }}
+              size="small"
+              aria-label={collapsed ? "expand sidebar" : "collapse sidebar"}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+
+          {/* close button for mobile temporary drawer */}
+          {!isMdUp && (
+            <IconButton
+              onClick={handleCloseMobile}
+              sx={{
+                color: theme.palette.text.primary,
+                "&:hover": { backgroundColor: theme.palette.action.hover },
+              }}
+              size="small"
+              aria-label="close sidebar"
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
+        </Box>
       </Toolbar>
 
+      <Divider sx={{ backgroundColor: theme.palette.divider }} />
+
       {/* Menu Items */}
-      <List sx={{ px: 1 }}>
-        {menuItems.map((item) => (
-          <ListItemButton
-            key={item.name}
-            selected={location.pathname === item.path}
-            onClick={() => navigate(item.path)}
-            sx={{
-              borderRadius: 2,
-              mb: 1,
-              color: "#d1d5db",
-              "&.Mui-selected": {
-                backgroundColor: "#1f2937",
-                color: "#00bcd4",
-              },
-              "&:hover": {
-                backgroundColor: "#1f2937",
-              },
-              justifyContent: collapsed ? "center" : "flex-start",
-            }}
-          >
-            <ListItemIcon
+      <List sx={{ px: 1, pt: 1 }}>
+        {menuItems.map((item) => {
+          const selected = location.pathname === item.path;
+          return (
+            <ListItemButton
+              key={item.name}
+              selected={selected}
+              onClick={() => {
+                navigate(item.path);
+                // close mobile drawer after navigation
+                if (!isMdUp) handleCloseMobile();
+              }}
               sx={{
-                color: location.pathname === item.path ? "#00bcd4" : "#9ca3af",
-                minWidth: collapsed ? "auto" : 40,
-                justifyContent: "center",
+                borderRadius: 2,
+                mb: 1,
+                color: theme.palette.text.primary,
+                justifyContent: collapsed ? "center" : "flex-start",
+                transition: "background-color 0.15s",
+                "&.Mui-selected": {
+                  backgroundColor: theme.palette.action.selected,
+                  color: theme.palette.primary.main,
+                },
+                "&:hover": {
+                  backgroundColor: theme.palette.action.hover,
+                },
               }}
             >
-              {item.icon}
-            </ListItemIcon>
-            {!collapsed && (
-              <ListItemText
-                primary={item.name}
-                primaryTypographyProps={{ fontSize: 15 }}
-              />
-            )}
-          </ListItemButton>
-        ))}
+              <ListItemIcon
+                sx={{
+                  color: selected ? theme.palette.primary.main : theme.palette.text.secondary,
+                  minWidth: collapsed ? "auto" : 40,
+                  justifyContent: "center",
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+
+              {!collapsed && (
+                <ListItemText
+                  primary={item.name}
+                  primaryTypographyProps={{
+                    fontSize: 15,
+                    color: selected ? theme.palette.primary.main : theme.palette.text.primary,
+                  }}
+                />
+              )}
+            </ListItemButton>
+          );
+        })}
       </List>
 
       <Box sx={{ flexGrow: 1 }} />
 
-      <Divider sx={{ backgroundColor: "#2d2f3e" }} />
+      <Divider sx={{ backgroundColor: theme.palette.divider }} />
 
       {/* User Section */}
       <Box sx={{ p: 2 }}>
         {!collapsed && (
           <Box
             sx={{
-              backgroundColor: "#1f2937",
+              backgroundColor: theme.palette.action.selected,
               borderRadius: 2,
-              p: 1.5,
+              p: 1.25,
               mb: 1.5,
             }}
           >
-            <Typography variant="body2" color="#9ca3af">
+            <Typography variant="body2" color={theme.palette.text.secondary}>
               Welcome,
             </Typography>
-            <Typography variant="body2" fontWeight="bold" noWrap>
+            <Typography variant="body2" fontWeight="bold" noWrap color={theme.palette.text.primary}>
               {name}
             </Typography>
           </Box>
         )}
 
         <ListItemButton
-          onClick={() => navigate("/logout")}
+          onClick={() => {
+            navigate("/logout");
+            if (!isMdUp) handleCloseMobile();
+          }}
           sx={{
             borderRadius: 2,
-            color: "#9ca3af",
-            "&:hover": {
-              backgroundColor: "#1f2937",
-              color: "#ef4444",
-            },
+            color: theme.palette.text.secondary,
             justifyContent: collapsed ? "center" : "flex-start",
+            "&:hover": {
+              backgroundColor: theme.palette.action.hover,
+              color: theme.palette.error.main,
+            },
           }}
         >
           <ListItemIcon
             sx={{
-              color: "#9ca3af",
+              color: theme.palette.text.secondary,
               minWidth: collapsed ? "auto" : 40,
               justifyContent: "center",
             }}
           >
             <Logout />
           </ListItemIcon>
-          {!collapsed && <ListItemText primary="Logout" />}
+          {!collapsed && (
+            <ListItemText primary="Logout" primaryTypographyProps={{ color: theme.palette.text.secondary }} />
+          )}
         </ListItemButton>
       </Box>
-    </Drawer>
+    </Box>
+  );
+
+  return (
+    <>
+      {/* Mobile floating menu button */}
+      {!isMdUp && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 12,
+            left: 12,
+            zIndex: (t) => t.zIndex.drawer + 10,
+            borderRadius: 1,
+            backgroundColor: "transparent",
+          }}
+        >
+          <IconButton
+            onClick={handleOpenMobile}
+            sx={{
+              bgcolor: theme.palette.background.paper,
+              color: theme.palette.text.primary,
+              boxShadow: 2,
+              "&:hover": { backgroundColor: theme.palette.action.hover },
+            }}
+            aria-label="open menu"
+            size="large"
+          >
+            <MenuIcon />
+          </IconButton>
+        </Box>
+      )}
+
+      {/* Permanent drawer for md+ */}
+      {isMdUp ? (
+        <Drawer
+          variant="permanent"
+          open
+          sx={{
+            width: collapsed ? drawerWidthCollapsed : drawerWidthExpanded,
+            flexShrink: 0,
+            "& .MuiDrawer-paper": {
+              width: collapsed ? drawerWidthCollapsed : drawerWidthExpanded,
+              boxSizing: "border-box",
+              backgroundColor: theme.palette.background.paper,
+              color: theme.palette.text.primary,
+              borderRight: "1px solid",
+              borderColor: theme.palette.divider,
+              transition: "width 0.3s",
+              overflowX: "hidden",
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      ) : (
+        // Temporary drawer for small screens
+        <Drawer
+          variant="temporary"
+          anchor="left"
+          open={mobileOpen}
+          onClose={handleCloseMobile}
+          ModalProps={{ keepMounted: true }}
+          PaperProps={{
+            sx: {
+              width: drawerWidthExpanded,
+              boxSizing: "border-box",
+              backgroundColor: theme.palette.background.paper,
+              color: theme.palette.text.primary,
+            },
+          }}
+          sx={{
+            zIndex: (t) => t.zIndex.drawer + 30,
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      )}
+    </>
   );
 };
 

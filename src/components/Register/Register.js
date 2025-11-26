@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// src/components/Auth/Register.jsx
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -14,19 +15,25 @@ import {
   Avatar,
   IconButton,
   Link,
+  Stack,
 } from "@mui/material";
 import {
   Person,
-  Email,
-  Lock,
+  Email as EmailIcon,
+  Lock as LockIcon,
   Visibility,
   VisibilityOff,
-  Search,
+  Search as SearchIcon,
 } from "@mui/icons-material";
 import withHOC from "../../common/hoc/with-hoc";
 import { registerProvider, useRegisterContext } from "./provider";
+import { useTheme } from "@mui/material/styles";
+import { useColorMode } from "../../theme/ThemeProvider";
 
 const Register = () => {
+  const theme = useTheme();
+  const { mode } = useColorMode();
+
   const {
     otpStep,
     handleRegister,
@@ -41,38 +48,105 @@ const Register = () => {
   } = useRegisterContext();
 
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmError, setConfirmError] = useState("");
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "info",
   });
 
+  // reset confirmError if password changes
+  useEffect(() => {
+    if (confirmPassword && formData.password) {
+      setConfirmError(confirmPassword === formData.password ? "" : "Passwords do not match");
+    }
+  }, [confirmPassword, formData.password]);
+
   const showSnackbar = (message, severity = "info") => {
     setSnackbar({ open: true, message, severity });
   };
 
   const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
+    setSnackbar((s) => ({ ...s, open: false }));
+  };
+
+  // wrapper for register that validates confirm password first
+  const onSubmitRegister = async (e) => {
+    e.preventDefault();
+
+    // basic checks
+    if (!formData.fullName || !formData.emailAddress || !formData.password) {
+      showSnackbar("Please fill all required fields.", "warning");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      showSnackbar("Password should be at least 6 characters.", "warning");
+      return;
+    }
+
+    if (confirmPassword !== formData.password) {
+      setConfirmError("Passwords do not match");
+      showSnackbar("Passwords do not match.", "error");
+      return;
+    }
+
+    // call provider register handler
+    try {
+      await handleRegister();
+      showSnackbar("Processing your registration...", "info");
+    } catch (err) {
+      // provider should set error as well; show generic fallback
+      showSnackbar(err?.message || "Registration failed", "error");
+    }
+  };
+
+  // wrapper for OTP submit (keeps using provider handleVerifyOtp)
+  const onSubmitOtp = async (e) => {
+    e.preventDefault();
+    if (!otp || otp.toString().trim().length === 0) {
+      showSnackbar("Please enter the OTP.", "warning");
+      return;
+    }
+    try {
+      await handleVerifyOtp();
+      showSnackbar("Verifying OTP...", "info");
+    } catch (err) {
+      showSnackbar(err?.message || "OTP verification failed", "error");
+    }
   };
 
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(to bottom right, #e0f7fa, #ffffff)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         p: 2,
+        background: (t) =>
+          t.palette.mode === "light"
+            ? `linear-gradient(135deg, ${t.palette.background.default} 0%, ${t.custom?.surfaceElevated ?? t.palette.background.paper} 100%)`
+            : `linear-gradient(135deg, ${t.palette.background.default} 0%, ${t.palette.background.paper} 100%)`,
+        color: theme.palette.text.primary,
       }}
     >
-      {/* Logo Section */}
+      {/* Logo */}
       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-        <Avatar sx={{ bgcolor: "#00bcd4", width: 40, height: 40, mr: 1 }}>
-          <Search sx={{ color: "#fff" }} />
+        <Avatar
+          sx={{
+            bgcolor: theme.palette.primary.main,
+            width: 44,
+            height: 44,
+            mr: 1,
+            color: theme.palette.primary.contrastText,
+          }}
+        >
+          <SearchIcon />
         </Avatar>
-        <Typography variant="h5" fontWeight="bold" color="#007c91">
+        <Typography variant="h5" fontWeight="700" sx={{ color: theme.palette.text.primary }}>
           FindItHub
         </Typography>
       </Box>
@@ -81,23 +155,22 @@ const Register = () => {
         Create your account to get started
       </Typography>
 
-      {/* Registration Card */}
-      <Card sx={{ width: 380, borderRadius: 4, boxShadow: 3 }}>
+      <Card
+        sx={{
+          width: { xs: "92%", sm: 420 },
+          borderRadius: 3,
+          boxShadow: 6,
+          bgcolor: theme.palette.background.paper,
+        }}
+      >
         <CardContent>
           {!otpStep ? (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleRegister(e);
-                showSnackbar("Processing your registration...", "info");
-              }}
-            >
+            <form onSubmit={onSubmitRegister}>
               <Typography
                 variant="h5"
-                fontWeight="bold"
+                fontWeight="700"
                 align="center"
-                color="#374151"
-                mb={2}
+                sx={{ color: theme.palette.text.primary, mb: 2 }}
               >
                 Sign Up
               </Typography>
@@ -115,15 +188,16 @@ const Register = () => {
                 name="fullName"
                 margin="normal"
                 placeholder="Enter your full name"
-                value={formData.fullName}
+                value={formData.fullName || ""}
                 onChange={handleChange}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Person />
+                      <Person color="action" />
                     </InputAdornment>
                   ),
                 }}
+                inputProps={{ "aria-label": "full name" }}
               />
 
               <TextField
@@ -134,15 +208,16 @@ const Register = () => {
                 type="email"
                 margin="normal"
                 placeholder="Enter your email"
-                value={formData.emailAddress}
+                value={formData.emailAddress || ""}
                 onChange={handleChange}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Email />
+                      <EmailIcon color="action" />
                     </InputAdornment>
                   ),
                 }}
+                inputProps={{ "aria-label": "email address" }}
               />
 
               <TextField
@@ -153,25 +228,63 @@ const Register = () => {
                 type={showPassword ? "text" : "password"}
                 margin="normal"
                 placeholder="Enter your password"
-                value={formData.password}
+                value={formData.password || ""}
                 onChange={handleChange}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Lock />
+                      <LockIcon color="action" />
                     </InputAdornment>
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={() => setShowPassword((s) => !s)}
                         edge="end"
+                        aria-label={showPassword ? "hide password" : "show password"}
+                        size="large"
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
+                inputProps={{ "aria-label": "password" }}
+                helperText="Minimum 6 characters"
+              />
+
+              <TextField
+                fullWidth
+                label="Confirm Password"
+                variant="outlined"
+                type={showPassword ? "text" : "password"}
+                margin="normal"
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockIcon color="action" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword((s) => !s)}
+                        edge="end"
+                        aria-label={showPassword ? "hide password" : "show password"}
+                        size="large"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                error={!!confirmError}
+                helperText={confirmError || ""}
+                inputProps={{ "aria-label": "confirm password" }}
+                sx={{ mb: 1 }}
               />
 
               <Button
@@ -179,14 +292,14 @@ const Register = () => {
                 variant="contained"
                 type="submit"
                 sx={{
-                  mt: 3,
-                  mb: 2,
-                  backgroundColor: "#00bcd4",
-                  "&:hover": { backgroundColor: "#0097a7" },
+                  mt: 2,
+                  mb: 1,
                   borderRadius: 2,
-                  py: 1.2,
+                  py: 1.25,
                   fontSize: "1rem",
-                  textTransform: "none",
+                  backgroundColor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                  "&:hover": { backgroundColor: theme.palette.action.selected },
                 }}
               >
                 Register
@@ -194,32 +307,24 @@ const Register = () => {
 
               <Typography align="center" sx={{ mt: 1, color: "text.secondary" }}>
                 Already have an account?{" "}
-                <Link href="/login" underline="hover" color="#00bcd4">
+                <Link href="/login" underline="hover" sx={{ color: theme.palette.primary.main }}>
                   Login
                 </Link>
               </Typography>
             </form>
           ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleVerifyOtp(e);
-                showSnackbar("Verifying OTP...", "info");
-              }}
-            >
+            <form onSubmit={onSubmitOtp}>
               <Typography
                 variant="h5"
-                fontWeight="bold"
+                fontWeight="700"
                 align="center"
-                color="#374151"
-                mb={2}
+                sx={{ color: theme.palette.text.primary, mb: 2 }}
               >
                 Verify Your Email
               </Typography>
 
               <Typography align="center" color="text.secondary" mb={2}>
-                Enter the OTP sent to{" "}
-                <strong>{formData.emailAddress}</strong>
+                Enter the OTP sent to <strong>{formData.emailAddress}</strong>
               </Typography>
 
               <TextField
@@ -227,31 +332,39 @@ const Register = () => {
                 label="OTP"
                 variant="outlined"
                 placeholder="Enter 6-digit OTP"
-                value={otp}
+                value={otp || ""}
                 onChange={(e) => setOtp(e.target.value)}
+                inputProps={{ "aria-label": "otp" }}
+                sx={{ mb: 2 }}
               />
 
-              <Button
-                fullWidth
-                variant="contained"
-                sx={{
-                  mt: 3,
-                  backgroundColor: "#00bcd4",
-                  "&:hover": { backgroundColor: "#0097a7" },
-                }}
-                type="submit"
-              >
-                Verify OTP
-              </Button>
-
-              <Button
-                fullWidth
-                variant="text"
-                sx={{ mt: 1, color: "#00bcd4" }}
-                onClick={() => setOtpStep(false)}
-              >
-                ← Back to Register
-              </Button>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  sx={{
+                    backgroundColor: theme.palette.primary.main,
+                    color: theme.palette.primary.contrastText,
+                    "&:hover": { backgroundColor: theme.palette.action.selected },
+                    textTransform: "none",
+                  }}
+                  type="submit"
+                >
+                  Verify OTP
+                </Button>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  onClick={() => setOtpStep(false)}
+                  sx={{
+                    textTransform: "none",
+                    borderColor: theme.palette.divider,
+                    color: theme.palette.text.primary,
+                  }}
+                >
+                  ← Back to Register
+                </Button>
+              </Stack>
             </form>
           )}
         </CardContent>
@@ -264,23 +377,20 @@ const Register = () => {
       {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3000}
+        autoHideDuration={3500}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          variant="filled"
-        >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} variant="filled">
           {snackbar.message}
         </Alert>
       </Snackbar>
 
       {/* Loader Backdrop */}
       <Backdrop
-        sx={(theme) => ({ color: "#fff", zIndex: theme.zIndex.drawer + 1 })}
+        sx={(t) => ({ color: t.palette.primary.contrastText, zIndex: t.zIndex.drawer + 1 })}
         open={loading}
+        aria-live="polite"
       >
         <CircularProgress color="inherit" />
       </Backdrop>

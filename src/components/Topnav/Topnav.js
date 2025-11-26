@@ -1,28 +1,26 @@
+// src/components/Topnav/Topnav.jsx
 import React from "react";
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Switch,
-  Stack,
-  Tooltip,
-  Button,
-} from "@mui/material";
-import ViewModuleIcon from "@mui/icons-material/ViewModule";
-import FeedbackOutlinedIcon from "@mui/icons-material/FeedbackOutlined";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import Brightness4Icon from "@mui/icons-material/Brightness4";
-import Brightness7Icon from "@mui/icons-material/Brightness7";
-import { useNavigate } from "react-router-dom";
-import { useColorMode } from "../../theme/ThemeProvider"; // 👈 global context
+import { AppBar, Toolbar, Stack, Switch, Tooltip, IconButton } from "@mui/material";
+import Brightness4Icon from "@mui/icons-material/Brightness4"; // moon
+import Brightness7Icon from "@mui/icons-material/Brightness7"; // sun
+import { useTheme } from "@mui/material/styles";
+import { useColorMode } from "../../theme/ThemeProvider";
 
-const TopNav = () => {
-  const { mode, toggleColorMode } = useColorMode(); // 👈 this controls MUI theme
-  const navigate = useNavigate();
+const TopNav = ({ onMenuClick }) => {
+  const theme = useTheme();
+
+  const { mode, toggleColorMode } = useColorMode();
+
+  // Switch's onChange passes (event, checked) — wrap to call toggleColorMode directly
+  const handleToggle = () => toggleColorMode();
+
+  // icon colors derived from theme so they adapt to light/dark
+  const sunColor = mode === "light" ? theme.palette.primary.main : theme.palette.text.secondary;
+  const moonColor = mode === "dark" ? theme.palette.primary.main : theme.palette.text.secondary;
 
   return (
     <AppBar
-      position="static"
+      position="sticky"
       elevation={0}
       color="transparent"
       sx={{
@@ -33,49 +31,51 @@ const TopNav = () => {
         bgcolor: "background.paper",
       }}
     >
-      <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-        {/* Left Section */}
-        <Stack direction="row" alignItems="center" spacing={4}>
-          <Tooltip title="Gallery View">
-            <Button
-              startIcon={<ViewModuleIcon />}
-              onClick={() => navigate("/home")}
-              sx={{ color: "text.primary", textTransform: "none", fontWeight: 500 }}
-            >
-              Gallery View
-            </Button>
-          </Tooltip>
-
-          <Tooltip title="Give Feedback">
-            <Button
-              startIcon={<FeedbackOutlinedIcon />}
-              onClick={() => navigate("/feedback")}
-              sx={{ color: "text.primary", textTransform: "none", fontWeight: 500 }}
-            >
-              Feedback
-            </Button>
-          </Tooltip>
-
-          <Tooltip title="View My Reports">
-            <Button
-              startIcon={<DescriptionOutlinedIcon />}
-              onClick={() => navigate("/my-reports")}
-              sx={{ color: "text.primary", textTransform: "none", fontWeight: 500 }}
-            >
-              My Reports
-            </Button>
-          </Tooltip>
-        </Stack>
-
-        {/* Dark / Light Mode Toggle */}
+      <Toolbar sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
         <Stack direction="row" alignItems="center" spacing={1}>
-          <Brightness7Icon color={mode === "light" ? "primary" : "disabled"} />
-          <Switch
-            checked={mode === "dark"}
-            onChange={toggleColorMode} // ✅ calls context toggle
-            color="default"
-          />
-          <Brightness4Icon color={mode === "dark" ? "primary" : "disabled"} />
+          <Tooltip title="Light mode">
+            <IconButton
+              size="small"
+              aria-hidden
+              sx={{
+                p: 0.5,
+                "&:hover": { backgroundColor: theme.palette.action.hover },
+              }}
+            >
+              <Brightness7Icon sx={{ color: sunColor }} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+            <Switch
+              checked={mode === "dark"}
+              onChange={handleToggle}
+              inputProps={{ "aria-label": "toggle dark mode" }}
+              color="default"
+              sx={{
+                // subtle theming for the switch thumb/track
+                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                  backgroundColor: theme.palette.action.selected,
+                },
+                "& .MuiSwitch-switchBase.Mui-checked .MuiSwitch-thumb": {
+                  backgroundColor: theme.palette.primary.main,
+                },
+              }}
+            />
+          </Tooltip>
+
+          <Tooltip title="Dark mode">
+            <IconButton
+              size="small"
+              aria-hidden
+              sx={{
+                p: 0.5,
+                "&:hover": { backgroundColor: theme.palette.action.hover },
+              }}
+            >
+              <Brightness4Icon sx={{ color: moonColor }} />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Toolbar>
     </AppBar>
