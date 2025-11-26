@@ -45,6 +45,14 @@ const useRegisterProvider = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  useEffect(() => {
+    if (confirmPassword && formData.password) {
+      setConfirmError(
+        confirmPassword === formData.password ? "" : "Passwords do not match"
+      );
+    }
+  }, [confirmPassword, formData.password]);
+
   // 🔹 Step 1: Handle Registration
   const handleRegister = async (e) => {
     e.preventDefault(); // ⬅️ STOP PAGE RELOAD
@@ -106,31 +114,35 @@ const useRegisterProvider = () => {
     }
   };
 
-  // 🔹 Step 2: Handle OTP Verification
   const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-
-    if (!otp) {
+    if (e?.preventDefault) e.preventDefault();   // safe guard
+  
+    if (!otp || otp.toString().trim().length === 0) {
       setError("Please enter OTP");
       showSnackbar("Please enter OTP", "error");
       return;
     }
-
+  
     setLoading(true);
-
+  
     try {
       const otpData = { emailAddress: formData.emailAddress, otp };
       const response = await verifyOtp(otpData);
-      const resData = response?.data || response;
-
+      const resData = response || response;
+  
       console.log("Verify OTP Response:", resData);
-
+  
       if (resData.status === 200 && resData.success) {
         showSnackbar(
           resData.message || "Your email has been verified successfully!",
           "success"
         );
-        setTimeout(() => navigate("/"), 1000);
+        if (resData.data.token) {
+          localStorage.setItem("userToken", resData.token);
+          localStorage.setItem("userInfo", JSON.stringify(resData.user));
+          showSnackbar("Login successful!", "success");
+          navigate("/home");
+        }
       } else {
         showSnackbar(
           resData.message || "Invalid OTP. Please try again.",
@@ -140,7 +152,7 @@ const useRegisterProvider = () => {
     } catch (err) {
       console.error("OTP verification error:", err);
       showSnackbar(
-        err.response?.data?.message ||
+        err?.response?.data?.message ||
           "Something went wrong. Please try again later.",
         "error"
       );
@@ -148,30 +160,7 @@ const useRegisterProvider = () => {
       setLoading(false);
     }
   };
-
-   // reset confirmError if password changes
-   useEffect(() => {
-    if (confirmPassword && formData.password) {
-      setConfirmError(
-        confirmPassword === formData.password ? "" : "Passwords do not match"
-      );
-    }
-  }, [confirmPassword, formData.password]);
-
-  // wrapper for OTP submit (keeps using provider handleVerifyOtp)
-  const onSubmitOtp = async (e) => {
-    e.preventDefault();
-    if (!otp || otp.toString().trim().length === 0) {
-      showSnackbar("Please enter the OTP.", "warning");
-      return;
-    }
-    try {
-      await handleVerifyOtp();
-      showSnackbar("Verifying OTP...", "info");
-    } catch (err) {
-      showSnackbar(err?.message || "OTP verification failed", "error");
-    }
-  };
+    
 
   // 🔹 Return everything for context
   return useMemo(
@@ -197,7 +186,6 @@ const useRegisterProvider = () => {
       setConfirmError,
       snackbar,
       setSnackbar,
-      onSubmitOtp,
     handleCloseSnackbar,
     }),
     [
@@ -220,7 +208,6 @@ const useRegisterProvider = () => {
       setConfirmError,
       snackbar,
       setSnackbar,
-      onSubmitOtp,
     handleCloseSnackbar,
     ]
   );

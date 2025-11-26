@@ -50,8 +50,8 @@ const Register = () => {
     setConfirmPassword,
     confirmError,
     snackbar,
-    onSubmitOtp,
     handleCloseSnackbar,
+    handleVerifyOtp,
   } = useRegisterContext();
 
   return (
@@ -267,7 +267,7 @@ const Register = () => {
               </Typography>
             </form>
           ) : (
-            <form onSubmit={onSubmitOtp}>
+            <form onSubmit={handleVerifyOtp}>
               <Typography
                 variant="h5"
                 fontWeight="700"
