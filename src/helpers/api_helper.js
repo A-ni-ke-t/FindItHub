@@ -6,6 +6,10 @@ const API_URL =  `https://find-it-hub-backend.vercel.app`
 
 export const axiosApi = axios.create({
   baseURL: API_URL,
+  validateStatus: function (status) {
+    // Accept all HTTP status codes as valid
+    return true; // 200, 400, 401, 500 all go to `then`
+  },
 })
 
 let latestToken = accessToken

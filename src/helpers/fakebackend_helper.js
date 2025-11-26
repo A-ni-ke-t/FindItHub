@@ -2,7 +2,10 @@ import { del, get, post, postWithFile,patch, put } from "./api_helper"
 import * as url from "./url_helper"
 
 export const login = user => post(`${url.LOGIN_USER}`, user)
+export const forgotPassword = user => post(`${url.FORGOT_PASSWORD}`, user)
+export const resetPassword = user => post(`${url.RESET_PASSWORD}`, user)
 export const verifyOtp = (otpData) => post(`${url.VERIFY_OTP}`, otpData);
+export const resendOtp = (otpData) => post(`${url.RESEND_OTP}`, otpData);
 export const registerUser = (data) => post(`${url.REGISTER_USER}`, data);
 export const changePassword = (data) => post(`${url.CHANGE_PASSWORD}`, data);
 export const logout = user => post(`${url.LOGOUT_USER}`, user)

@@ -1,10 +1,13 @@
 // export const API_URL = process.env.REACT_APP_API_URL
-export const API_URL = `https://find-it-hub-backend.vercel.app`
-// export const API_URL = `http://localhost:9000`
+// export const API_URL = `https://find-it-hub-backend.vercel.app`
+export const API_URL = `http://localhost:9000`
 
 
 export const LOGIN_USER = `${API_URL}/auth/login`
+export const FORGOT_PASSWORD = `${API_URL}/auth/forgot-password`
+export const RESET_PASSWORD = `${API_URL}/auth/reset-password`
 export const VERIFY_OTP = `${API_URL}/auth/verify-otp`;
+export const RESEND_OTP = `${API_URL}/auth/resend-otp`;
 export const REGISTER_USER = `${API_URL}/auth/register`;
 export const CHANGE_PASSWORD = `${API_URL}/auth/change-password`;
 export const ADD_ITEMS = `${API_URL}/items`;

@@ -10,6 +10,7 @@ import AddItem from "./components/AddItem/AddItem";
 import Logout from "./components/Logout/Logout";
 import ItemDetails from "./components/Home/ItemDetails";
 import EditItem from "./components/AddItem/EditItem";
+import ForgotPassword from "./components/ForgotPassword/ForgotPassword";
 
 function App() {
   return (
@@ -17,6 +18,8 @@ function App() {
       {/* Public pages */}
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+
 
       {/* Protected (Dashboard) pages — all wrapped in layout */}
       <Route element={<DashboardLayout />}>
