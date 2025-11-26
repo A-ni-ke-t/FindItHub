@@ -138,8 +138,8 @@ const useRegisterProvider = () => {
           "success"
         );
         if (resData.data.token) {
-          localStorage.setItem("userToken", resData.token);
-          localStorage.setItem("userInfo", JSON.stringify(resData.user));
+          localStorage.setItem("userToken", resData?.data?.token);
+          localStorage.setItem("userInfo", JSON.stringify(resData?.data?.user));
           showSnackbar("Login successful!", "success");
           navigate("/home");
         }
