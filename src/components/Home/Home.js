@@ -148,7 +148,10 @@ const Home = () => {
   };
 
   // derive visible rows for current page (client-side pagination)
-  const paginatedItems = items.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const paginatedItems = items.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   return (
     <Box
@@ -226,34 +229,46 @@ const Home = () => {
           }}
         />
 
-        {["All", "Returned", "Not Returned"].map((type) => {
-          const selected = filter === type;
-          return (
-            <Chip
-              key={type}
-              label={type}
-              onClick={() => {
-                setFilter(type);
-                setPage(0);
-              }}
-              sx={{
-                borderRadius: 3,
-                px: 2,
-                fontWeight: selected ? "bold" : "normal",
-                bgcolor: selected
-                  ? theme.palette.action.selected
-                  : "transparent",
-                color: selected
-                  ? theme.palette.primary.main
-                  : theme.palette.text.primary,
-                "&:hover": { backgroundColor: theme.palette.action.hover },
-                border: selected
-                  ? `1px solid ${theme.palette.primary.main}`
-                  : "1px solid transparent",
-              }}
-            />
-          );
-        })}
+        <Box
+          sx={{
+            display: "flex",
+            gap: 1,
+            overflowX: "auto",
+            whiteSpace: "nowrap",
+            pb: 1,
+            "&::-webkit-scrollbar": { display: "none" }, // hides scrollbar
+          }}
+        >
+          {["All", "Returned", "Not Returned"].map((type) => {
+            const selected = filter === type;
+            return (
+              <Chip
+                key={type}
+                label={type}
+                onClick={() => {
+                  setFilter(type);
+                  setPage(0);
+                }}
+                sx={{
+                  borderRadius: 3,
+                  px: 2,
+                  whiteSpace: "nowrap",
+                  fontWeight: selected ? "bold" : "normal",
+                  bgcolor: selected
+                    ? theme.palette.action.selected
+                    : "transparent",
+                  color: selected
+                    ? theme.palette.primary.main
+                    : theme.palette.text.primary,
+                  "&:hover": { backgroundColor: theme.palette.action.hover },
+                  border: selected
+                    ? `1px solid ${theme.palette.primary.main}`
+                    : "1px solid transparent",
+                }}
+              />
+            );
+          })}
+        </Box>
       </Box>
 
       {/* MAIN CONTENT */}
@@ -310,7 +325,11 @@ const Home = () => {
                   <TableRow key={i}>
                     {isSmUp && (
                       <TableCell>
-                        <Skeleton variant="rectangular" width={64} height={48} />
+                        <Skeleton
+                          variant="rectangular"
+                          width={64}
+                          height={48}
+                        />
                       </TableCell>
                     )}
                     <TableCell>
@@ -399,7 +418,6 @@ const Home = () => {
                     backgroundColor: getStatusColor(item.returned),
                     color: "#fff",
                     fontWeight: "bold",
-                    
                   }}
                 />
 
@@ -538,7 +556,9 @@ const Home = () => {
                         textOverflow: "ellipsis",
                       }}
                     >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
                         <LocationOn fontSize="small" color="action" />
                         <Typography noWrap color="text.secondary">
                           {item.location}
@@ -547,7 +567,9 @@ const Home = () => {
                     </TableCell>
 
                     <TableCell>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
                         <Person fontSize="small" color="action" />
                         <Typography noWrap color="text.secondary">
                           {item.createdBy?.fullName || "Unknown"}
@@ -557,7 +579,9 @@ const Home = () => {
 
                     <TableCell>
                       <Typography noWrap color="text.secondary">
-                        {new Date(item.createdAt || Date.now()).toLocaleDateString()}
+                        {new Date(
+                          item.createdAt || Date.now()
+                        ).toLocaleDateString()}
                       </Typography>
                     </TableCell>
 
@@ -589,7 +613,9 @@ const Home = () => {
                           <IconButton
                             size="small"
                             onClick={() =>
-                              navigate(`/items/${item._id}`, { state: { item } })
+                              navigate(`/items/${item._id}`, {
+                                state: { item },
+                              })
                             }
                           >
                             <OpenInNew />
