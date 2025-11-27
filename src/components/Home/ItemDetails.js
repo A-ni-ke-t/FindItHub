@@ -216,17 +216,17 @@ const ItemDetails = () => {
 
             <Stack direction="row" spacing={1} alignItems="center">
               <Chip
-                label={item.returned ? "Returned" : "Lost"}
+                label={item.returned ? "Returned" : "Not Returned"}
                 sx={{
                   px: 1.5,
                   py: 0.5,
                   fontWeight: 700,
                   backgroundColor:
-                    item.status === "Returned"
+                    item.returned ===  true
                       ? theme.custom?.status?.returned ?? theme.palette.success.main
-                      : item.status === "Found"
+                      : item.returned === true
                       ? theme.custom?.status?.found ?? theme.palette.warning.main
-                      : item.status === "Lost"
+                      : item.returned === false
                       ? theme.custom?.status?.lost ?? theme.palette.error.main
                       : theme.palette.primary.main,
                   color: theme.custom?.surfaceContrast?.onSurface ?? theme.palette.primary.contrastText,

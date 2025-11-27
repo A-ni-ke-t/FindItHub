@@ -1,121 +1,169 @@
-import axios from "axios"
-import accessToken from "./jwt-token-access/accessToken"
-import Swal from "sweetalert2"
+// src/helpers/axiosApi.js
+import axios from "axios";
+import Swal from "sweetalert2";
 
-const API_URL =  `https://find-it-hub-backend.vercel.app`
+const API_URL = `https://find-it-hub-backend.vercel.app`;
 
+/**
+ * Create axios instance.
+ * validateStatus returns `false` only for 401 so 401 responses go to `catch`.
+ * All other statuses (200, 400, 403, 500, ...) will be resolved and handled in `then`.
+ */
 export const axiosApi = axios.create({
   baseURL: API_URL,
   validateStatus: function (status) {
-    // Accept all HTTP status codes as valid
-    return true; // 200, 400, 401, 500 all go to `then`
+    // Treat 401 as error so it flows to the response error interceptor.
+    // Accept all other statuses.
+    return status !== 401;
   },
-})
+});
 
-let latestToken = accessToken
-
-axiosApi.defaults.headers.common["Authorization"] = latestToken
-
-axiosApi.interceptors.response.use(
-  response => {
-    // const newToken = response.data && response.data.data.token
-    // if (newToken) {
-    //   latestToken = newToken
-    //   axiosApi.defaults.headers.common["Authorization"] = latestToken
-    // }
-    console.log("token" ,response.data)
-    const newToken = response?.data?.data?.token || response?.data?.token;
-if (newToken) {
-  latestToken = `Bearer ${newToken}`;
-  axiosApi.defaults.headers.common["Authorization"] = latestToken;
-}
-
-    return response
-  },
-  async error => {
-    console.log(error)
-    if (
-      error.response &&
-      error.response.status === 401 &&
-      localStorage.getItem("userToken")
-    ) {
-      Swal.fire({
-        title: "Error",
-        icon: "error",
-        text: "Your Session has Timed Out.",
-      }).then(() => {
-        localStorage.removeItem("userToken")
-        window.location.href = "/"
-      })
+/**
+ * Request interceptor:
+ * - Always attach Authorization from localStorage (if available).
+ * - Ensures header uses "Bearer <token>" format.
+ */
+axiosApi.interceptors.request.use(
+  (config) => {
+    try {
+      const token = localStorage.getItem("userToken") || "";
+      if (token) {
+        // If token already contains "Bearer", keep it; otherwise prefix.
+        config.headers = config.headers || {};
+        config.headers["Authorization"] = token.startsWith("Bearer ")
+          ? token
+          : `Bearer ${token}`;
+      } else {
+        // Ensure header removed if no token
+        if (config.headers) delete config.headers["Authorization"];
+      }
+    } catch (err) {
+      // silent
     }
-    return Promise.reject(error)
+
+    // allow CORS header in requests if desired (you were adding it in helpers)
+    config.headers = {
+      ...(config.headers || {}),
+      "Access-Control-Allow-Origin": "*",
+    };
+
+    return config;
+  },
+  (err) => Promise.reject(err)
+);
+
+/**
+ * Response interceptor:
+ * - On success: if backend returns a new token (common shapes), update localStorage and default header.
+ * - On error: if status is 401 and we have a stored userToken, show message, clear storage and redirect to login/root.
+ */
+axiosApi.interceptors.response.use(
+  (response) => {
+    // Try to extract a token from common response shapes
+    const newToken =
+      response?.data?.data?.token || response?.data?.token || null;
+
+    if (newToken) {
+      const bearer = newToken.startsWith("Bearer ")
+        ? newToken
+        : `Bearer ${newToken}`;
+
+      // store token so future requests will pick it up from localStorage (request interceptor)
+      try {
+        // store both raw token and bearer for backward compatibility in other code parts
+        const raw = bearer.replace(/^Bearer\s+/i, "");
+        localStorage.setItem("userToken", bearer);
+        localStorage.setItem("userTokenRaw", raw);
+      } catch (err) {
+        // ignore storage failures
+      }
+    }
+
+    return response;
+  },
+  async (error) => {
+    // If axios itself couldn't process response (network error), bubble up
+    if (!error || !error.response) {
+      return Promise.reject(error);
+    }
+
+    const { response } = error;
+
+    // If 401: centrally handle (session expiry / not authenticated)
+    if (response.status === 401) {
+      // If there was a token we probably need to clear session and redirect
+      const hasToken = !!localStorage.getItem("userToken");
+
+      // Show a friendly message only if token existed (session timeout)
+      if (hasToken) {
+        try {
+          await Swal.fire({
+            title: "Session expired",
+            text: "Your session has timed out. Please login again.",
+            icon: "warning",
+            confirmButtonText: "OK",
+          });
+        } catch (swalErr) {
+          // ignore
+        }
+      }
+
+      // Clear auth info
+      try {
+        localStorage.removeItem("userToken");
+        localStorage.removeItem("userTokenRaw");
+        // optionally remove user info
+        // localStorage.removeItem("userInfo");
+      } catch (err) {
+        // ignore
+      }
+
+      // Force full redirect to login/root page
+      // Using window.location ensures single place redirect independent of router instance
+      window.location.href = "/";
+    }
+
+    // Re-throw so calling code can still handle other error cases
+    return Promise.reject(error);
   }
-)
+);
+
+/**
+ * Small helpers that always return response.data (like before).
+ * They also ensure Authorization header is present (request interceptor does this).
+ */
 
 export async function get(url, config = {}) {
-  return await axiosApi
-    .get(url, {
-      ...config,
-      headers: {
-        Authorization: latestToken,
-        "Access-Control-Allow-Origin": "*",
-      },
-    })
-    .then(response => response.data)
+  const resp = await axiosApi.get(url, { ...config });
+  return resp.data;
 }
 
-export async function post(url, data, config = {}) {
-  console.log("TOKENNN",latestToken)
-  return axiosApi
-    .post(url, data, { ...config, headers: { Authorization: latestToken } })
-    .then(response => response.data)
+export async function post(url, data = {}, config = {}) {
+  const resp = await axiosApi.post(url, data, { ...config });
+  return resp.data;
 }
 
-export async function postWithFile(
-  url,
-  data,
-  config = { Authorization: latestToken }
-) {
+export async function postWithFile(url, data, config = {}) {
   const headers = {
-    ...config,
     "Content-Type": "multipart/form-data",
-  }
-
-  return axiosApi.post(url, data, { headers }).then(response => response.data)
+    ...(config.headers || {}),
+  };
+  const resp = await axiosApi.post(url, data, { ...config, headers });
+  return resp.data;
 }
 
-export async function put(url, data, config = { Authorization: accessToken }) {
-  return axiosApi
-    .put(url, { ...data }, { ...config })
-    .then(response => response.data)
+export async function put(url, data = {}, config = {}) {
+  const resp = await axiosApi.put(url, data, { ...config });
+  return resp.data;
 }
 
-export async function patch(url, data, config = {Authorization: latestToken}) {
-  return axiosApi
-    .patch(url, data, {
-      ...config,
-      headers: {
-        Authorization: latestToken,
-        "Content-Type": "application/json",
-        ...config.headers,
-      },
-    })
-    .then(response => response.data)
-    .catch(error => {
-      console.error("PATCH error:", error);
-      throw error;
-    });
+export async function patch(url, data = {}, config = {}) {
+  const resp = await axiosApi.patch(url, data, { ...config });
+  return resp.data;
 }
 
-// export async function del(url, config = { Authorization: latestToken }) {
-//   return await axiosApi
-//     .delete(url, { ...config })
-//     .then(response => response.data)
-// }
-
-export async function del(url, payload, config = { Authorization: latestToken }) {
-  return await axios.delete(url, { 
-    data: payload,
-    headers: { ...config }
-  }).then(response => response.data);
+export async function del(url, payload = {}, config = {}) {
+  // axios.delete supports `data` in config
+  const resp = await axiosApi.delete(url, { data: payload, ...config });
+  return resp.data;
 }
