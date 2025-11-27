@@ -20,6 +20,7 @@ import { useTheme } from "@mui/material/styles";
 import { addItem, uploadFile } from "../../helpers/fakebackend_helper";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import { useColorMode } from "../../theme/ThemeProvider";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 
 const AddItem = () => {
   const theme = useTheme();
@@ -35,7 +36,11 @@ const AddItem = () => {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
 
   const objectUrlRef = useRef(null);
 
@@ -98,7 +103,11 @@ const AddItem = () => {
     e.preventDefault();
 
     // basic validation
-    if (!formData.title.trim() || !formData.description.trim() || !formData.location.trim()) {
+    if (
+      !formData.title.trim() ||
+      !formData.description.trim() ||
+      !formData.location.trim()
+    ) {
       showSnackbar("Please fill in all required fields.", "warning");
       return;
     }
@@ -112,7 +121,7 @@ const AddItem = () => {
 
       const payload = { ...formData, image: imagePath };
       const res = await addItem(payload);
-      const resData =  res;
+      const resData = res;
 
       if (resData.status === 200 || resData.success) {
         showSnackbar("Item added successfully!", "success");
@@ -129,15 +138,34 @@ const AddItem = () => {
       }
     } catch (err) {
       console.error(err);
-      showSnackbar(err.message || "Something went wrong while adding the item.", "error");
+      showSnackbar(
+        err.message || "Something went wrong while adding the item.",
+        "error"
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 }, width: "100%", boxSizing: "border-box", display: "flex", justifyContent: "center" }}>
-      <Card sx={{ width: "100%", maxWidth: 920, borderRadius: 3, boxShadow: 6, bgcolor: theme.palette.background.paper }}>
+    <Box
+      sx={{
+        p: { xs: 2, sm: 3 },
+        width: "100%",
+        boxSizing: "border-box",
+        display: "flex",
+        justifyContent: "center",
+      }}
+    >
+      <Card
+        sx={{
+          width: "100%",
+          maxWidth: 920,
+          borderRadius: 3,
+          boxShadow: 6,
+          bgcolor: theme.palette.background.paper,
+        }}
+      >
         <CardContent>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
             Add Lost Item
@@ -176,15 +204,24 @@ const AddItem = () => {
               margin="normal"
             />
 
-            <Box sx={{ mt: 2, display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" }, alignItems: "center" }}>
+            <Box
+              sx={{
+                mt: 2,
+                display: "flex",
+                gap: 2,
+                flexDirection: { xs: "column", sm: "row" },
+                alignItems: "center",
+              }}
+            >
               <input
                 accept="image/*"
-                id="additem-file"
+                id="additem-camera"
                 type="file"
+                capture="environment" // rear camera
                 onChange={handleFileChange}
                 style={{ display: "none" }}
               />
-              <label htmlFor="additem-file">
+              <label htmlFor="additem-camera">
                 <Button
                   component="span"
                   variant="outlined"
@@ -196,7 +233,30 @@ const AddItem = () => {
                     "&:hover": { backgroundColor: theme.palette.action.hover },
                   }}
                 >
-                  Upload Image
+                  Take a photo
+                </Button>
+              </label>
+
+              <input
+                accept="image/*"
+                id="additem-filepicker"
+                type="file"
+                onChange={handleFileChange}
+                style={{ display: "none" }}
+              />
+              <label htmlFor="additem-filepicker">
+                <Button
+                  component="span"
+                  variant="outlined"
+                  startIcon={<FileUploadIcon />}
+                  sx={{
+                    textTransform: "none",
+                    borderColor: theme.palette.divider,
+                    color: theme.palette.text.primary,
+                    "&:hover": { backgroundColor: theme.palette.action.hover },
+                  }}
+                >
+                  Upload from files
                 </Button>
               </label>
 
@@ -211,7 +271,12 @@ const AddItem = () => {
               )}
             </Box>
 
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center" sx={{ mt: 3 }}>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              alignItems="center"
+              sx={{ mt: 3 }}
+            >
               <Button
                 type="submit"
                 variant="contained"
@@ -223,14 +288,23 @@ const AddItem = () => {
                 }}
                 disabled={loading}
               >
-                {loading ? <CircularProgress size={18} color="inherit" /> : "Add Item"}
+                {loading ? (
+                  <CircularProgress size={18} color="inherit" />
+                ) : (
+                  "Add Item"
+                )}
               </Button>
 
               <Button
                 type="button"
                 variant="outlined"
                 onClick={() => {
-                  setFormData({ title: "", description: "", location: "", image: "" });
+                  setFormData({
+                    title: "",
+                    description: "",
+                    location: "",
+                    image: "",
+                  });
                   setFile(null);
                   if (objectUrlRef.current) {
                     URL.revokeObjectURL(objectUrlRef.current);
@@ -251,7 +325,13 @@ const AddItem = () => {
               <Box sx={{ flex: 1 }} />
 
               {/* Preview container */}
-              <Box sx={{ width: { xs: "100%", sm: 200 }, display: "flex", justifyContent: "flex-end" }}>
+              <Box
+                sx={{
+                  width: { xs: "100%", sm: 200 },
+                  display: "flex",
+                  justifyContent: "flex-end",
+                }}
+              >
                 {previewUrl ? (
                   <CardMedia
                     component="img"
@@ -271,7 +351,9 @@ const AddItem = () => {
                       width: "100%",
                       height: { xs: 140, sm: 160, md: 180 },
                       borderRadius: 1,
-                      backgroundColor: theme.custom?.surfaceContrast?.muted ?? theme.palette.background.surface,
+                      backgroundColor:
+                        theme.custom?.surfaceContrast?.muted ??
+                        theme.palette.background.surface,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -290,12 +372,27 @@ const AddItem = () => {
         </CardContent>
       </Card>
 
-      <Backdrop sx={(t) => ({ color: t.palette.primary.contrastText, zIndex: t.zIndex.drawer + 1 })} open={loading}>
+      <Backdrop
+        sx={(t) => ({
+          color: t.palette.primary.contrastText,
+          zIndex: t.zIndex.drawer + 1,
+        })}
+        open={loading}
+      >
         <CircularProgress color="inherit" />
       </Backdrop>
 
-      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={closeSnackbar} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
-        <Alert onClose={closeSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={closeSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
