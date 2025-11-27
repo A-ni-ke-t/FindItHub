@@ -11,6 +11,7 @@ import Logout from "./components/Logout/Logout";
 import ItemDetails from "./components/Home/ItemDetails";
 import EditItem from "./components/AddItem/EditItem";
 import ForgotPassword from "./components/ForgotPassword/ForgotPassword";
+import Profile from "./components/Profile/Profile";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
       <Route element={<DashboardLayout />}>
         <Route path="/home" element={<Home />} />
         <Route path="/additem" element={<AddItem />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/logout" element={<Logout />} />
       {/* Other individual pages */}
       <Route path="/items/:id" element={<ItemDetails />} />

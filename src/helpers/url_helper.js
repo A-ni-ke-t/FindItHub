@@ -17,6 +17,8 @@ export const POST_ITEM = `${API_URL}/items`;
 export const RETURNED_ITEM = `${API_URL}/items`;
 export const UPDATE_ITEM = `${API_URL}/items`;
 export const UPLOAD = `${API_URL}/upload/`;
+export const UPDATE_PROFILE = `${API_URL}/auth/update-profile`;
+
 
 export const LOGOUT_USER = `${API_URL}/auth/logout`
 

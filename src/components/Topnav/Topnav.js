@@ -8,13 +8,10 @@ import { useColorMode } from "../../theme/ThemeProvider";
 
 const TopNav = ({ onMenuClick }) => {
   const theme = useTheme();
-
   const { mode, toggleColorMode } = useColorMode();
 
-  // Switch's onChange passes (event, checked) — wrap to call toggleColorMode directly
   const handleToggle = () => toggleColorMode();
 
-  // icon colors derived from theme so they adapt to light/dark
   const sunColor = mode === "light" ? theme.palette.primary.main : theme.palette.text.secondary;
   const moonColor = mode === "dark" ? theme.palette.primary.main : theme.palette.text.secondary;
 
@@ -33,27 +30,28 @@ const TopNav = ({ onMenuClick }) => {
     >
       <Toolbar sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
         <Stack direction="row" alignItems="center" spacing={1}>
-          <Tooltip title="Light mode">
+          
+          {/* ☀ Sun icon → Always sets mode to LIGHT */}
+          <Tooltip title="Switch to light mode">
             <IconButton
               size="small"
-              aria-hidden
               sx={{
                 p: 0.5,
                 "&:hover": { backgroundColor: theme.palette.action.hover },
               }}
+              onClick={() => mode !== "light" && toggleColorMode()}
             >
               <Brightness7Icon sx={{ color: sunColor }} />
             </IconButton>
           </Tooltip>
 
+          {/* Switch (works the same) */}
           <Tooltip title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
             <Switch
               checked={mode === "dark"}
               onChange={handleToggle}
-              inputProps={{ "aria-label": "toggle dark mode" }}
               color="default"
               sx={{
-                // subtle theming for the switch thumb/track
                 "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
                   backgroundColor: theme.palette.action.selected,
                 },
@@ -64,18 +62,20 @@ const TopNav = ({ onMenuClick }) => {
             />
           </Tooltip>
 
-          <Tooltip title="Dark mode">
+          {/* 🌙 Moon icon → Always sets mode to DARK */}
+          <Tooltip title="Switch to dark mode">
             <IconButton
               size="small"
-              aria-hidden
               sx={{
                 p: 0.5,
                 "&:hover": { backgroundColor: theme.palette.action.hover },
               }}
+              onClick={() => mode !== "dark" && toggleColorMode()}
             >
               <Brightness4Icon sx={{ color: moonColor }} />
             </IconButton>
           </Tooltip>
+
         </Stack>
       </Toolbar>
     </AppBar>

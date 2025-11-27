@@ -30,11 +30,20 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 
+const safeParse = (str) => {
+  try {
+    return JSON.parse(str);
+  } catch {
+    return {};
+  }
+};
+
 const ItemDetails = () => {
   const theme = useTheme();
   const { state } = useLocation();
   const navigate = useNavigate();
   const item = state?.item;
+  const [user, setUser] = useState(() => safeParse(localStorage.getItem("userInfo") || "{}"));
 
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
@@ -64,9 +73,9 @@ const ItemDetails = () => {
     setLoading(true);
     try {
       const response = await getItemComments(item._id);
-      const resData = response?.data || response;
-      if (resData.status === 200 && Array.isArray(resData.data)) {
-        setComments(resData.data);
+      console.log("COMMENT RES",response)
+      if (response.status === 200 && Array.isArray(response.data)) {
+        setComments(response.data);
       } else setComments([]);
     } catch (err) {
       showSnackbar("Failed to load comments.", "error");
@@ -75,6 +84,7 @@ const ItemDetails = () => {
     }
   };
 
+  console.log("COMMENTS",comments)
   useEffect(() => {
     fetchComments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,7 +99,7 @@ const ItemDetails = () => {
     setPosting(true);
     try {
       const response = await postItemComment(item._id, { content: newComment });
-      const resData = response?.data || response;
+      const resData =  response;
       if (resData.status === 200 || resData.success) {
         setNewComment("");
         showSnackbar("Comment added successfully!", "success");
@@ -113,9 +123,10 @@ const ItemDetails = () => {
         title: item.title,
         description: item.description,
       });
-      const resData = response?.data || response;
+      const resData = response;
+      console.log("resData",resData)
       if (resData.status === 200 || resData.success) {
-        showSnackbar("Item marked as returned!", "success");
+        showSnackbar(resData.message, "success");
         navigate("/home");
       } else {
         showSnackbar(resData.message || "Failed to mark item as returned.", "error");
@@ -205,7 +216,7 @@ const ItemDetails = () => {
 
             <Stack direction="row" spacing={1} alignItems="center">
               <Chip
-                label={item.status || "Lost"}
+                label={item.returned ? "Returned" : "Lost"}
                 sx={{
                   px: 1.5,
                   py: 0.5,
@@ -222,7 +233,7 @@ const ItemDetails = () => {
                 }}
               />
 
-              {!item.returned && (
+              {(!item.returned && item.createdBy._id === user.userId) && (
                 <Button
                   variant="contained"
                   color="primary"

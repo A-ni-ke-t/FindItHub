@@ -1,5 +1,5 @@
 // src/components/Sidebar/Sidebar.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Drawer,
   List,
@@ -30,6 +30,14 @@ import { useColorMode } from "../../theme/ThemeProvider";
 const drawerWidthExpanded = 240;
 const drawerWidthCollapsed = 80;
 
+const safeParse = (str) => {
+  try {
+    return JSON.parse(str);
+  } catch {
+    return {};
+  }
+};
+
 const Sidebar = ({ mobileOpen: mobileOpenProp, onMobileOpen, onMobileClose }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [internalMobileOpen, setInternalMobileOpen] = useState(false);
@@ -38,6 +46,7 @@ const Sidebar = ({ mobileOpen: mobileOpenProp, onMobileOpen, onMobileClose }) =>
   const location = useLocation();
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
+  const [user, setUser] = useState(() => safeParse(localStorage.getItem("userInfo") || "{}"));
 
   const { mode } = useColorMode();
 
@@ -66,14 +75,33 @@ const Sidebar = ({ mobileOpen: mobileOpenProp, onMobileOpen, onMobileClose }) =>
     if (isMdUp) setInternalMobileOpen(false);
   }, [isMdUp]);
 
-  // safe parse of userInfo
-  const user = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("userInfo") || "{}");
-    } catch {
-      return {};
-    }
-  })();
+  
+
+   const refreshUserFromStorage = useCallback(() => {
+    const updated = safeParse(localStorage.getItem("userInfo") || "{}");
+    setUser(updated);
+  }, []);
+
+  useEffect(() => {
+    // listen for our custom event (fired in same window)
+    const onCustom = () => refreshUserFromStorage();
+    window.addEventListener("userInfoChanged", onCustom);
+
+    // also listen for 'storage' so other tabs/windows can update the UI
+    const onStorage = (ev) => {
+      if (!ev) return;
+      if (ev.key === "userInfo" || ev.key === "userInfo_updatedAt") {
+        refreshUserFromStorage();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("userInfoChanged", onCustom);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [refreshUserFromStorage]);
+
   const name = user.fullName || "User";
 
   const menuItems = [
@@ -215,7 +243,7 @@ const Sidebar = ({ mobileOpen: mobileOpenProp, onMobileOpen, onMobileClose }) =>
             }}
           >
             <Typography variant="body2" color={theme.palette.text.secondary}>
-              Welcome,
+              Welcome
             </Typography>
             <Typography variant="body2" fontWeight="bold" noWrap color={theme.palette.text.primary}>
               {name}
