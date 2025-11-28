@@ -108,6 +108,12 @@ const Home = () => {
   };
 
   useEffect(() => {
+    if (!isSmUp) {
+      setViewMode("grid");
+    }
+  }, [isSmUp]);
+
+  useEffect(() => {
     fetchItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, filter]);
@@ -190,7 +196,6 @@ const Home = () => {
           onChange={handleViewChange}
           sx={{ backgroundColor: theme.palette.action.hover }}
         >
-         
           <ToggleButton value="list" sx={{ border: "none" }}>
             <ViewList />
           </ToggleButton>
