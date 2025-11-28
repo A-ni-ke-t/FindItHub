@@ -29,6 +29,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
+import { placeholder } from "../../assets";
 
 const safeParse = (str) => {
   try {
@@ -248,7 +249,7 @@ const ItemDetails = () => {
           </Stack>
 
           {/* Image: responsive heights for mobile/desktop */}
-          {item.image && (
+          {item.image ? (
             <>
             <Box
         sx={{
@@ -305,7 +306,62 @@ const ItemDetails = () => {
           />
         </Box>
       </Dialog></>
-          )}
+          ) : ( <>
+            <Box
+        sx={{
+          width: "100%",
+          overflow: "hidden",
+          borderRadius: 2,
+          mb: 2,
+          cursor: "pointer",
+          display: "block",
+        }}
+        onClick={handleOpen} // open modal on click
+      >
+        <CardMedia
+          component="img"
+          image={placeholder}
+          alt={item.title}
+          sx={{
+            width: "100%",
+            height: { xs: 200, sm: 260, md: 340 },
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
+      </Box>
+
+      {/* Fullscreen modal */}
+      <Dialog open={open} onClose={handleClose} maxWidth="lg">
+        <Box sx={{ position: "relative" }}>
+          <IconButton
+            onClick={handleClose}
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              color: "white",
+              backgroundColor: "rgba(0,0,0,0.4)",
+              "&:hover": { backgroundColor: "rgba(0,0,0,0.6)" },
+              zIndex: 10,
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <CardMedia
+            component="img"
+            image={placeholder}
+            alt={item.title}
+            sx={{
+              width: "100%",
+              height: "auto",
+              maxHeight: "90vh",
+              objectFit: "contain",
+              backgroundColor: "black",
+            }}
+          />
+        </Box>
+      </Dialog></>)}
 
           {/* Description & metadata */}
           <Box sx={{ mb: 2 }}>

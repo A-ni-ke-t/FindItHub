@@ -14,6 +14,15 @@ import ForgotPassword from "./components/ForgotPassword/ForgotPassword";
 import Profile from "./components/Profile/Profile";
 
 function App() {
+  // ProtectedRoute component defined inline
+  const ProtectedRoute = ({ children }) => {
+    const token = localStorage.getItem("userToken");
+    if (!token) {
+      return <Navigate to="/" replace />;
+    }
+    return children;
+  };
+
   return (
     <Routes>
       {/* Public pages */}
@@ -21,18 +30,21 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
 
-
-      {/* Protected (Dashboard) pages — all wrapped in layout */}
-      <Route element={<DashboardLayout />}>
+      {/* Protected (Dashboard) pages — wrapped in layout */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/home" element={<Home />} />
         <Route path="/additem" element={<AddItem />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/logout" element={<Logout />} />
-      {/* Other individual pages */}
-      <Route path="/items/:id" element={<ItemDetails />} />
-      <Route path="/edit/:id" element={<EditItem />} />
+        <Route path="/items/:id" element={<ItemDetails />} />
+        <Route path="/edit/:id" element={<EditItem />} />
       </Route>
-
 
       {/* Catch-all redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />

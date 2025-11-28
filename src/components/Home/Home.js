@@ -42,6 +42,7 @@ import { useTheme } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { getItems } from "../../helpers/fakebackend_helper";
 import { useColorMode } from "../../theme/ThemeProvider";
+import { placeholder } from "../../assets/index";
 
 const Home = () => {
   const theme = useTheme();
@@ -189,11 +190,12 @@ const Home = () => {
           onChange={handleViewChange}
           sx={{ backgroundColor: theme.palette.action.hover }}
         >
-          <ToggleButton value="grid" sx={{ border: "none" }}>
-            <GridView />
-          </ToggleButton>
+         
           <ToggleButton value="list" sx={{ border: "none" }}>
             <ViewList />
+          </ToggleButton>
+          <ToggleButton value="grid" sx={{ border: "none" }}>
+            <GridView />
           </ToggleButton>
         </ToggleButtonGroup>
       </Box>
@@ -394,10 +396,21 @@ const Home = () => {
                   "&:hover": { boxShadow: 6, transform: "translateY(-4px)" },
                 }}
               >
-                {item.image && (
+                {item.image ? (
                   <CardMedia
                     component="img"
                     image={item.image}
+                    alt={item.title}
+                    sx={{
+                      height: { xs: 160, sm: 170, md: 180 },
+                      width: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                ) : (
+                  <CardMedia
+                    component="img"
+                    image={placeholder}
                     alt={item.title}
                     sx={{
                       height: { xs: 160, sm: 170, md: 180 },
@@ -511,15 +524,11 @@ const Home = () => {
                           sx={{ width: 64, height: 48 }}
                         />
                       ) : (
-                        <Box
-                          sx={{
-                            width: 64,
-                            height: 48,
-                            borderRadius: 1,
-                            backgroundColor:
-                              theme.custom?.surfaceContrast?.muted ??
-                              theme.palette.background.surface,
-                          }}
+                        <Avatar
+                          variant="rounded"
+                          src={placeholder}
+                          alt={item.title}
+                          sx={{ width: 64, height: 48 }}
                         />
                       )}
                     </TableCell>

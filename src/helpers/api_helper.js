@@ -91,23 +91,7 @@ axiosApi.interceptors.response.use(
 
     // If 401: centrally handle (session expiry / not authenticated)
     if (response.status === 401) {
-      // If there was a token we probably need to clear session and redirect
-      const hasToken = !!localStorage.getItem("userToken");
-
-      // Show a friendly message only if token existed (session timeout)
-      if (hasToken) {
-        try {
-          await Swal.fire({
-            title: "Session expired",
-            text: "Your session has timed out. Please login again.",
-            icon: "warning",
-            confirmButtonText: "OK",
-          });
-        } catch (swalErr) {
-          // ignore
-        }
-      }
-
+      
       // Clear auth info
       try {
         localStorage.removeItem("userToken");

@@ -1,6 +1,5 @@
-// import img1 from "../assets/img1.jpeg";
+import placeholder from "../assets/placeholder.jpg";
 
-// export {
-//   img1,
- 
-// };
+export {
+    placeholder,
+};
