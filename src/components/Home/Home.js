@@ -599,6 +599,7 @@ const Home = () => {
                         label={item.returned ? "Returned" : "Not Returned"}
                         sx={{
                           backgroundColor: getStatusColor(item.returned),
+                          width: { xs: 90, sm: 110, md: 130 },
                           color: "#fff",
                           fontWeight: 700,
                           px: 1,
