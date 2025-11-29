@@ -1,5 +1,5 @@
 // src/components/ItemDetails/ItemDetails.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   Card,
   CardMedia,
@@ -18,157 +18,78 @@ import {
   Chip,
   Avatar,
   IconButton,
-  Dialog, 
+  Dialog,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import {
-  getItemComments,
-  postItemComment,
-  markItemAsReturned,
-} from "../../helpers/fakebackend_helper";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useTheme } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
+import { useTheme } from "@mui/material/styles";
+import withHOC from "../../common/hoc/with-hoc";
+import { itemDetailsProvider, useItemDetailsContext } from "./itemDetailProvider";
 import { placeholder } from "../../assets";
 
-const safeParse = (str) => {
-  try {
-    return JSON.parse(str);
-  } catch {
-    return {};
-  }
-};
+/**
+ * ItemDetails - UI layer only, consumes useItemDetailsContext (provider)
+ * Exported wrapped with withHOC(itemDetailsProvider, ItemDetails)
+ */
+
+const initialsFor = (name) =>
+  name
+    ? name
+        .split(" ")
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "U";
 
 const ItemDetails = () => {
   const theme = useTheme();
-  const { state } = useLocation();
-  const navigate = useNavigate();
-  const item = state?.item;
-  const [user, setUser] = useState(() => safeParse(localStorage.getItem("userInfo") || "{}"));
 
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [posting, setPosting] = useState(false);
-  const [returning, setReturning] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "info",
-  });
+  const {
+    item,
+    user,
+    comments,
+    newComment,
+    setNewComment,
+    loading,
+    posting,
+    returning,
+    snackbar,
+    closeSnackbar,
+    handleAddComment,
+    handleMarkAsReturned,
+    imageModalOpen,
+    openImageModal,
+    closeImageModal,
+    fetchComments,
+  } = useItemDetailsContext();
 
-  const [open, setOpen] = useState(false);
-
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
-
-  const showSnackbar = (message, severity = "info") =>
-    setSnackbar({ open: true, message, severity });
-
-  const handleCloseSnackbar = () =>
-    setSnackbar((prev) => ({ ...prev, open: false }));
-
-  // Fetch comments
-  const fetchComments = async () => {
-    if (!item?._id) return;
-    setLoading(true);
-    try {
-      const response = await getItemComments(item._id);
-      console.log("COMMENT RES",response)
-      if (response.status === 200 && Array.isArray(response.data)) {
-        setComments(response.data);
-      } else setComments([]);
-    } catch (err) {
-      showSnackbar("Failed to load comments.", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  console.log("COMMENTS",comments)
+  // If the provider fetched comments when mounted, keep UI updated.
   useEffect(() => {
-    fetchComments();
+    if (item?._id) fetchComments(item._id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?._id]);
-
-  // Add new comment
-  const handleAddComment = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim()) return showSnackbar("Please enter a comment.", "warning");
-    if (!item?._id) return;
-
-    setPosting(true);
-    try {
-      const response = await postItemComment(item._id, { content: newComment });
-      const resData =  response;
-      if (resData.status === 200 || resData.success) {
-        setNewComment("");
-        showSnackbar("Comment added successfully!", "success");
-        fetchComments();
-      } else {
-        showSnackbar(resData.message || "Failed to add comment.", "error");
-      }
-    } catch (err) {
-      showSnackbar("Something went wrong while posting comment.", "error");
-    } finally {
-      setPosting(false);
-    }
-  };
-
-  // Mark as returned
-  const handleMarkAsReturned = async () => {
-    if (!item?._id) return;
-    setReturning(true);
-    try {
-      const response = await markItemAsReturned(item._id, {
-        title: item.title,
-        description: item.description,
-      });
-      const resData = response;
-      console.log("resData",resData)
-      if (resData.status === 200 || resData.success) {
-        showSnackbar(resData.message, "success");
-        navigate("/home");
-      } else {
-        showSnackbar(resData.message || "Failed to mark item as returned.", "error");
-      }
-    } catch (err) {
-      showSnackbar("Something went wrong while marking returned.", "error");
-    } finally {
-      setReturning(false);
-    }
-  };
 
   if (!item)
     return (
       <Box sx={{ p: 4 }}>
-        <Typography variant="body1">⚠️ No item data found. Please go back to the home page.</Typography>
+        <Typography variant="body1">
+          ⚠️ No item data found. Please go back to the home page.
+        </Typography>
       </Box>
     );
-
-  // Helper: author initials
-  const initials = (name) =>
-    name
-      ? name
-          .split(" ")
-          .map((n) => n[0])
-          .slice(0, 2)
-          .join("")
-          .toUpperCase()
-      : "U";
 
   return (
     <Box
       sx={{
         p: { xs: 2, sm: 3 },
-        // allow the component to take full width of its parent
         width: "100%",
         boxSizing: "border-box",
       }}
     >
       <Card
         sx={{
-          width: "100%", // FULL WIDTH as requested
+          width: "100%",
           borderRadius: 3,
           boxShadow: 6,
           overflow: "visible",
@@ -176,7 +97,7 @@ const ItemDetails = () => {
         }}
       >
         <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-          {/* Header row */}
+          {/* Header */}
           <Stack
             direction={{ xs: "column", sm: "row" }}
             justifyContent="space-between"
@@ -186,7 +107,7 @@ const ItemDetails = () => {
           >
             <Stack direction="row" alignItems="center" spacing={1}>
               <IconButton
-                onClick={() => navigate("/home")}
+                onClick={() => window.history.back()}
                 aria-label="back"
                 size="medium"
                 sx={{
@@ -223,10 +144,8 @@ const ItemDetails = () => {
                   py: 0.5,
                   fontWeight: 700,
                   backgroundColor:
-                    item.returned ===  true
+                    item.returned === true
                       ? theme.custom?.status?.returned ?? theme.palette.success.main
-                      : item.returned === true
-                      ? theme.custom?.status?.found ?? theme.palette.warning.main
                       : item.returned === false
                       ? theme.custom?.status?.lost ?? theme.palette.error.main
                       : theme.palette.primary.main,
@@ -234,7 +153,7 @@ const ItemDetails = () => {
                 }}
               />
 
-              {(!item.returned && item.createdBy._id === user.userId) && (
+              {(!item.returned && item.createdBy?._id === user?.userId) && (
                 <Button
                   variant="contained"
                   color="primary"
@@ -248,120 +167,60 @@ const ItemDetails = () => {
             </Stack>
           </Stack>
 
-          {/* Image: responsive heights for mobile/desktop */}
-          {item.image ? (
-            <>
-            <Box
-        sx={{
-          width: "100%",
-          overflow: "hidden",
-          borderRadius: 2,
-          mb: 2,
-          cursor: "pointer",
-          display: "block",
-        }}
-        onClick={handleOpen} // open modal on click
-      >
-        <CardMedia
-          component="img"
-          image={item.image}
-          alt={item.title}
-          sx={{
-            width: "100%",
-            height: { xs: 200, sm: 260, md: 340 },
-            objectFit: "cover",
-            display: "block",
-          }}
-        />
-      </Box>
-
-      {/* Fullscreen modal */}
-      <Dialog open={open} onClose={handleClose} maxWidth="lg">
-        <Box sx={{ position: "relative" }}>
-          <IconButton
-            onClick={handleClose}
-            sx={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              color: "white",
-              backgroundColor: "rgba(0,0,0,0.4)",
-              "&:hover": { backgroundColor: "rgba(0,0,0,0.6)" },
-              zIndex: 10,
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-          <CardMedia
-            component="img"
-            image={item.image}
-            alt={item.title}
+          {/* Image and modal */}
+          <Box
             sx={{
               width: "100%",
-              height: "auto",
-              maxHeight: "90vh",
-              objectFit: "contain",
-              backgroundColor: "black",
+              overflow: "hidden",
+              borderRadius: 2,
+              mb: 2,
+              cursor: "pointer",
             }}
-          />
-        </Box>
-      </Dialog></>
-          ) : ( <>
-            <Box
-        sx={{
-          width: "100%",
-          overflow: "hidden",
-          borderRadius: 2,
-          mb: 2,
-          cursor: "pointer",
-          display: "block",
-        }}
-        onClick={handleOpen} // open modal on click
-      >
-        <CardMedia
-          component="img"
-          image={placeholder}
-          alt={item.title}
-          sx={{
-            width: "100%",
-            height: { xs: 200, sm: 260, md: 340 },
-            objectFit: "cover",
-            display: "block",
-          }}
-        />
-      </Box>
-
-      {/* Fullscreen modal */}
-      <Dialog open={open} onClose={handleClose} maxWidth="lg">
-        <Box sx={{ position: "relative" }}>
-          <IconButton
-            onClick={handleClose}
-            sx={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              color: "white",
-              backgroundColor: "rgba(0,0,0,0.4)",
-              "&:hover": { backgroundColor: "rgba(0,0,0,0.6)" },
-              zIndex: 10,
-            }}
+            onClick={openImageModal}
           >
-            <CloseIcon />
-          </IconButton>
-          <CardMedia
-            component="img"
-            image={placeholder}
-            alt={item.title}
-            sx={{
-              width: "100%",
-              height: "auto",
-              maxHeight: "90vh",
-              objectFit: "contain",
-              backgroundColor: "black",
-            }}
-          />
-        </Box>
-      </Dialog></>)}
+            <CardMedia
+              component="img"
+              image={item.image || placeholder}
+              alt={item.title}
+              sx={{
+                width: "100%",
+                height: { xs: 200, sm: 260, md: 340 },
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
+          </Box>
+
+          <Dialog open={imageModalOpen} onClose={closeImageModal} maxWidth="lg">
+            <Box sx={{ position: "relative" }}>
+              <IconButton
+                onClick={closeImageModal}
+                sx={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                  color: "white",
+                  backgroundColor: "rgba(0,0,0,0.4)",
+                  "&:hover": { backgroundColor: "rgba(0,0,0,0.6)" },
+                  zIndex: 10,
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
+              <CardMedia
+                component="img"
+                image={item.image || placeholder}
+                alt={item.title}
+                sx={{
+                  width: "100%",
+                  height: "auto",
+                  maxHeight: "90vh",
+                  objectFit: "contain",
+                  backgroundColor: "black",
+                }}
+              />
+            </Box>
+          </Dialog>
 
           {/* Description & metadata */}
           <Box sx={{ mb: 2 }}>
@@ -381,7 +240,7 @@ const ItemDetails = () => {
 
           <Divider sx={{ my: 3 }} />
 
-          {/* Comments section */}
+          {/* Comments */}
           <Box>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
               <Typography variant="h6">Comments</Typography>
@@ -411,9 +270,7 @@ const ItemDetails = () => {
               <Stack direction="row" spacing={1} justifyContent="flex-end">
                 <Button
                   variant="text"
-                  onClick={() => {
-                    setNewComment("");
-                  }}
+                  onClick={() => setNewComment("")}
                   disabled={posting}
                 >
                   Cancel
@@ -451,7 +308,7 @@ const ItemDetails = () => {
                     >
                       <Stack direction="row" spacing={2} alignItems="flex-start">
                         <Avatar sx={{ bgcolor: theme.palette.primary.main, color: theme.palette.primary.contrastText }}>
-                          {initials(c.userId?.fullName)}
+                          {initialsFor(c.userId?.fullName)}
                         </Avatar>
 
                         <Box sx={{ flex: 1 }}>
@@ -473,7 +330,6 @@ const ItemDetails = () => {
         </CardContent>
       </Card>
 
-      {/* Backdrop for long actions */}
       <Backdrop
         sx={(t) => ({ color: t.palette.primary.contrastText, zIndex: t.zIndex.drawer + 1 })}
         open={returning}
@@ -482,14 +338,13 @@ const ItemDetails = () => {
         <CircularProgress color="inherit" />
       </Backdrop>
 
-      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
-        onClose={handleCloseSnackbar}
+        onClose={closeSnackbar}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+        <Alert onClose={closeSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
           {snackbar.message}
         </Alert>
       </Snackbar>
@@ -497,4 +352,4 @@ const ItemDetails = () => {
   );
 };
 
-export default ItemDetails;
+export default withHOC(itemDetailsProvider, ItemDetails);
