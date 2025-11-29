@@ -29,7 +29,8 @@ import withHOC from "../../common/hoc/with-hoc";
 import { registerProvider, useRegisterContext } from "./provider";
 import { useTheme } from "@mui/material/styles";
 import { useColorMode } from "../../theme/ThemeProvider";
-
+import logoDark from "../../assets/Logo/Findithub_Dark.png"
+import logoLight from "../../assets/Logo/Findithub_Light.png"
 const Register = () => {
   const theme = useTheme();
   const { mode } = useColorMode();
@@ -74,17 +75,17 @@ const Register = () => {
     >
       {/* Logo */}
       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-        <Avatar
-          sx={{
-            bgcolor: theme.palette.primary.main,
-            width: 44,
-            height: 44,
-            mr: 1,
-            color: theme.palette.primary.contrastText,
-          }}
-        >
-          <SearchIcon />
-        </Avatar>
+  <Box
+    component="img"
+    src={mode === "light" ? logoLight:logoDark}
+    alt="FindItHub Logo"
+    sx={{
+      height: { xs: 28, sm: 32 },   // Responsive height
+      width: "auto",                // Keeps aspect ratio
+      mr: 1,
+      display: "block",
+    }}
+  />
         <Typography
           variant="h5"
           fontWeight="700"

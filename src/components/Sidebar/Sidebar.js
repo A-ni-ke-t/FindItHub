@@ -26,7 +26,8 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import { useColorMode } from "../../theme/ThemeProvider";
-
+import logoDark from "../../assets/Logo/Findithub_Dark.png"
+import logoLight from "../../assets/Logo/Findithub_Light.png"
 const drawerWidthExpanded = 240;
 const drawerWidthCollapsed = 80;
 
@@ -113,65 +114,70 @@ const Sidebar = ({ mobileOpen: mobileOpenProp, onMobileOpen, onMobileClose }) =>
   const drawerContent = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Header */}
-      <Toolbar
+     <Toolbar
+  sx={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: collapsed ? "center" : "space-between",
+    px: 2,
+    py: 2,
+  }}
+>
+  {!collapsed && (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box
+        component="img"
+        src={mode === "light" ? logoLight : logoDark}
+        alt="Find It Hub"
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: collapsed ? "center" : "space-between",
-          px: 2,
-          py: 2,
+          height: { xs: 26, sm: 30 },
+          width: "auto",
+          display: "block",
         }}
+      />
+
+      <Typography
+        variant="h6"
+        fontWeight="bold"
+        sx={{ color: theme.palette.text.primary, lineHeight: 1.2 }}
+        noWrap
       >
-        {!collapsed && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Avatar
-              sx={{
-                bgcolor: theme.palette.primary.main,
-                width: 34,
-                height: 34,
-                color: theme.palette.primary.contrastText,
-              }}
-            >
-              <Search fontSize="small" />
-            </Avatar>
-            <Typography variant="h6" fontWeight="bold" sx={{ color: theme.palette.text.primary }} noWrap>
-              Find It Hub
-            </Typography>
-          </Box>
-        )}
+        Find It Hub
+      </Typography>
+    </Box>
+  )}
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {/* collapse toggle (desktop) */}
-          {isMdUp && (
-            <IconButton
-              onClick={() => setCollapsed((s) => !s)}
-              sx={{
-                color: theme.palette.text.primary,
-                "&:hover": { backgroundColor: theme.palette.action.hover },
-              }}
-              size="small"
-              aria-label={collapsed ? "expand sidebar" : "collapse sidebar"}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
+  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+    {isMdUp && (
+      <IconButton
+        onClick={() => setCollapsed((s) => !s)}
+        sx={{
+          color: theme.palette.text.primary,
+          "&:hover": { backgroundColor: theme.palette.action.hover },
+        }}
+        size="small"
+        aria-label={collapsed ? "expand sidebar" : "collapse sidebar"}
+      >
+        <MenuIcon />
+      </IconButton>
+    )}
 
-          {/* close button for mobile temporary drawer */}
-          {!isMdUp && (
-            <IconButton
-              onClick={handleCloseMobile}
-              sx={{
-                color: theme.palette.text.primary,
-                "&:hover": { backgroundColor: theme.palette.action.hover },
-              }}
-              size="small"
-              aria-label="close sidebar"
-            >
-              <CloseIcon />
-            </IconButton>
-          )}
-        </Box>
-      </Toolbar>
+    {!isMdUp && (
+      <IconButton
+        onClick={handleCloseMobile}
+        sx={{
+          color: theme.palette.text.primary,
+          "&:hover": { backgroundColor: theme.palette.action.hover },
+        }}
+        size="small"
+        aria-label="close sidebar"
+      >
+        <CloseIcon />
+      </IconButton>
+    )}
+  </Box>
+</Toolbar>
+
 
       <Divider sx={{ backgroundColor: theme.palette.divider }} />
 

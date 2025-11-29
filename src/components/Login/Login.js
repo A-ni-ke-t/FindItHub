@@ -33,7 +33,8 @@ import { useTheme } from "@mui/material/styles";
 import { useColorMode } from "../../theme/ThemeProvider";
 import withHOC from "../../common/hoc/with-hoc";
 import { loginProvider, useLoginContext } from "./provider";
-
+import logoDark from "../../assets/Logo/Findithub_Dark.png"
+import logoLight from "../../assets/Logo/Findithub_Light.png"
 const Login = () => {
   const theme = useTheme();
   const { mode } = useColorMode();
@@ -101,22 +102,27 @@ const Login = () => {
       })}
     >
       {/* Logo */}
-      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-        <Avatar
-          sx={{
-            bgcolor: theme.palette.primary.main,
-            width: 40,
-            height: 40,
-            mr: 1,
-            color: theme.palette.primary.contrastText,
-          }}
-        >
-          <Search />
-        </Avatar>
-        <Typography variant="h5" fontWeight="bold">
-          FindItHub
-        </Typography>
-      </Box>
+  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+  <Box
+    component="img"
+    src={mode === "light" ? logoLight:logoDark}
+    alt="FindItHub Logo"
+    sx={{
+      height: { xs: 28, sm: 32 },   // Responsive height
+      width: "auto",                // Keeps aspect ratio
+      mr: 1,
+      display: "block",
+    }}
+  />
+
+  <Typography
+    variant="h5"
+    fontWeight="bold"
+    sx={{ lineHeight: 1.2 }}        // Better vertical alignment
+  >
+    FindItHub
+  </Typography>
+</Box>
 
       <Typography variant="subtitle1" color="text.secondary" mb={3}>
         Welcome back! Login to continue
