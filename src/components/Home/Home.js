@@ -223,7 +223,8 @@ const Home = () => {
                 md={4}
                 lg={3}
                 key={i}
-                sx={{ display: "flex", justifyContent: "center" }}
+                sx={{ display: "flex", justifyContent: `${!isMdUp ? "center" : "left"}`,
+              }}
               >
                 <Card
                   sx={{
