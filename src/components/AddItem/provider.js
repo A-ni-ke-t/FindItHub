@@ -146,7 +146,7 @@ const useAddItemProvider = () => {
         }
   
         if (uploadResult.reason === "UPLOAD_FAILED") {
-          return showSnackbar("Image upload failed. Try again.", "error");
+          return showSnackbar("Image too large. Upload a smaller file.", "error");
         }
   
         return showSnackbar("Image is required.", "warning");
