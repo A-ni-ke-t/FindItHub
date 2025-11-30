@@ -9,7 +9,6 @@ import Home from "./components/Home/Home";
 import AddItem from "./components/AddItem/AddItem";
 import Logout from "./components/Logout/Logout";
 import ItemDetails from "./components/Home/ItemDetails";
-import EditItem from "./components/AddItem/EditItem";
 import ForgotPassword from "./components/ForgotPassword/ForgotPassword";
 import Profile from "./components/Profile/Profile";
 
@@ -43,7 +42,6 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/items/:id" element={<ItemDetails />} />
-        <Route path="/edit/:id" element={<EditItem />} />
       </Route>
 
       {/* Catch-all redirect */}

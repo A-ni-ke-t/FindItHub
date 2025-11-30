@@ -1,5 +1,5 @@
-// src/components/Home.jsx
-import React, { useEffect, useState } from "react";
+// src/components/Home/Home.jsx
+import React, { useEffect } from "react";
 import {
   Box,
   Typography,
@@ -40,89 +40,44 @@ import {
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
-import { getItems } from "../../helpers/fakebackend_helper";
 import { useColorMode } from "../../theme/ThemeProvider";
-import { placeholder } from "../../assets/index";
+import { placeholder } from "../../assets";
+import withHOC from "../../common/hoc/with-hoc";
+import { homeProvider, useHomeContext } from "./homeProvider";
 
 const Home = () => {
   const theme = useTheme();
-  const { toggleColorMode, mode } = useColorMode();
+  const { mode } = useColorMode();
   const navigate = useNavigate();
-
-  const [items, setItems] = useState([]);
-  const [viewMode, setViewMode] = useState("list");
-  const [loading, setLoading] = useState(false);
-
-  const [filter, setFilter] = useState("All");
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
   const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
 
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "info",
-  });
+  const {
+    items,
+    viewMode,
+    loading,
+    filter,
+    search,
+    snackbar,
+    page,
+    rowsPerPage,
+    paginatedItems,
+    setFilter,
+    setSearch,
+    setPage,
+    setViewMode,
+    handleViewChange,
+    handleCloseSnackbar,
+    handleChangePage,
+    handleChangeRowsPerPage,
+  } = useHomeContext();
 
-  // Pagination state
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-
-  // Debounce search
+  // Force grid view on small screens (same behavior as before)
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(0); // reset page on search change
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [search]);
-
-  // Fetch items
-  const fetchItems = async () => {
-    setLoading(true);
-    try {
-      let query = "";
-      if (debouncedSearch.trim() !== "") {
-        query += `search=${encodeURIComponent(debouncedSearch)}`;
-      }
-      if (filter === "Returned") query += (query ? "&" : "") + "returned=true";
-      else if (filter === "Not Returned")
-        query += (query ? "&" : "") + "returned=false";
-
-      const response = await getItems(query);
-      const resData = response;
-      if (resData?.status === 200 && Array.isArray(resData.data))
-        setItems(resData.data);
-      else if (Array.isArray(resData)) setItems(resData);
-      else setItems([]);
-    } catch (err) {
-      setSnackbar({
-        open: true,
-        message: "Failed to load items.",
-        severity: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!isSmUp) {
+    if (!isSmUp && viewMode === "list") {
       setViewMode("grid");
     }
-  }, [isSmUp]);
-
-  useEffect(() => {
-    fetchItems();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, filter]);
-
-  // clamp page when items or rowsPerPage changes
-  useEffect(() => {
-    const lastPage = Math.max(0, Math.ceil(items.length / rowsPerPage) - 1);
-    if (page > lastPage) setPage(lastPage);
-  }, [items, rowsPerPage, page]);
+  }, [isSmUp, viewMode, setViewMode]);
 
   const getStatusColor = (status) => {
     if (status === false)
@@ -138,27 +93,6 @@ const Home = () => {
     }
     return theme.custom?.status?.default ?? theme.palette.primary.main;
   };
-
-  const handleViewChange = (_, nextView) => {
-    if (nextView) setViewMode(nextView);
-  };
-
-  const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
-
-  // Pagination handlers
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  // derive visible rows for current page (client-side pagination)
-  const paginatedItems = items.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
 
   return (
     <Box
@@ -177,7 +111,6 @@ const Home = () => {
           mb: 3,
           gap: 2,
           flexWrap: "wrap",
-          // position: "sticky",
           top: 0,
           zIndex: (t) => t.zIndex.appBar - 1,
           bgcolor: "transparent",
@@ -243,7 +176,7 @@ const Home = () => {
             overflowX: "auto",
             whiteSpace: "nowrap",
             pb: 1,
-            "&::-webkit-scrollbar": { display: "none" }, // hides scrollbar
+            "&::-webkit-scrollbar": { display: "none" },
           }}
         >
           {["All", "Returned", "Not Returned"].map((type) => {
@@ -370,7 +303,7 @@ const Home = () => {
           No items match your search.
         </Typography>
       ) : viewMode === "grid" ? (
-        /* ---------- GRID VIEW (unchanged) ---------- */
+        /* ---------- GRID VIEW ---------- */
         <Grid
           container
           spacing={3}
@@ -497,7 +430,7 @@ const Home = () => {
           ))}
         </Grid>
       ) : (
-        /* ---------- LIST VIEW (TABLE WITH PAGINATION) ---------- */
+        /* ---------- LIST VIEW (TABLE + PAGINATION) ---------- */
         <Box>
           <TableContainer component={Paper} sx={{ maxHeight: "65vh" }}>
             <Table stickyHeader>
@@ -683,4 +616,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default withHOC(homeProvider, Home);

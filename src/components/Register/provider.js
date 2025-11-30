@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { register } from "./service";
-import { verifyOtp } from "../../helpers/fakebackend_helper";
+import { verifyOtp,registerUser } from "../../helpers/fakebackend_helper";
 import generateContext from "../../common/context/generateContext";
 
 /**
@@ -84,10 +83,9 @@ const useRegisterProvider = () => {
 
     try {
       // 🔹 Call register API
-      const response = await register(formData);
+      const response = await registerUser(formData);
       const resData = response?.data || response;
 
-      console.log("Register API Response:", resData);
 
       if (resData.status === 200 || resData.success) {
         // 🔹 Move to OTP step
@@ -130,7 +128,6 @@ const useRegisterProvider = () => {
       const response = await verifyOtp(otpData);
       const resData = response || response;
   
-      console.log("Verify OTP Response:", resData);
   
       if (resData.status === 200 && resData.success) {
         showSnackbar(
