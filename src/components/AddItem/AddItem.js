@@ -154,7 +154,7 @@ const AddItem = () => {
               </label>
 
               <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
-                Optional — add a photo to help identify the item
+                Required* — add a photo to help identify the item
               </Typography>
             </Box>
 

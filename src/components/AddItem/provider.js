@@ -77,6 +77,11 @@ const useAddItemProvider = () => {
     fd.append("file", file);
     try {
       const res = await apiUploadFile(fd);
+
+      if(res.error.code == 413){
+        showSnackbar("Image is too big.", "error");
+        return;
+      }
       // adapt to common shapes returned by backend
       const possible = res?.data?.[0] || res?.data?.url || res?.data || "";
       return typeof possible === "string" ? possible : "";
@@ -107,11 +112,21 @@ const useAddItemProvider = () => {
       return;
     }
 
+
     setLoading(true);
     try {
       let imagePath = formData.image || "";
       if (file) {
         imagePath = await uploadImageIfAny();
+        
+        if(!imagePath){
+          showSnackbar("Image too large. Please select a smaller image", "error");
+          return;
+        }      }
+
+      if(!formData.image.trim()){
+        showSnackbar("Please upload image. Image is required.", "warning");
+        return;
       }
 
       const payload = { ...formData, image: imagePath };
