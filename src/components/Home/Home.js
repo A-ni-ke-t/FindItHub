@@ -74,10 +74,10 @@ const Home = () => {
 
   // Force grid view on small screens (same behavior as before)
   useEffect(() => {
-    if (!isSmUp && viewMode === "list") {
+    if (!isSmUp) {
       setViewMode("grid");
     }
-  }, [isSmUp, viewMode, setViewMode]);
+  }, [isSmUp]);
 
   const getStatusColor = (status) => {
     if (status === false)
