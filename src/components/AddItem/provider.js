@@ -72,24 +72,36 @@ const useAddItemProvider = () => {
   };
 
   const uploadImageIfAny = async () => {
-    if (!file) return "";
+    if (!file) {
+      return { success: false, reason: "NO_FILE" };
+    }
+  
     const fd = new FormData();
     fd.append("file", file);
+  
     try {
       const res = await apiUploadFile(fd);
-
-      if(res.error.code == 413){
-        showSnackbar("Image is too big.", "error");
-        return;
+  
+      // 413 TOO LARGE
+      if (res?.error?.code === "413" || res?.error?.code === 413) {
+        return { success: false, reason: "TOO_LARGE" };
       }
-      // adapt to common shapes returned by backend
-      const possible = res?.data?.[0] || res?.data?.url || res?.data || "";
-      return typeof possible === "string" ? possible : "";
+  
+      const possible =
+        res?.data?.[0] || res?.data?.url || res?.data || "";
+  
+      if (typeof possible === "string") {
+        return { success: true, path: possible };
+      }
+  
+      return { success: false, reason: "INVALID_RESPONSE" };
+  
     } catch (err) {
-      console.error("upload error", err);
-      throw new Error("Image upload failed");
+      return { success: false, reason: "UPLOAD_FAILED" };
     }
   };
+  
+  
 
   const resetForm = () => {
     setFormData({ title: "", description: "", location: "", image: "" });
@@ -105,49 +117,62 @@ const useAddItemProvider = () => {
 
   const handleSubmit = async (e) => {
     if (e?.preventDefault) e.preventDefault();
-
-    // basic validation
-    if (!formData.title.trim() || !formData.description.trim() || !formData.location.trim()) {
+  
+    if (
+      !formData.title.trim() ||
+      !formData.description.trim() ||
+      !formData.location.trim()
+    ) {
       showSnackbar("Please fill in all required fields.", "warning");
       return;
     }
-
-
+  
+    if (!file) {
+      showSnackbar("Image is required.", "warning");
+      return;
+    }
+  
     setLoading(true);
+  
     try {
-      let imagePath = formData.image || "";
-      if (file) {
-        imagePath = await uploadImageIfAny();
-        
-        if(!imagePath){
-          showSnackbar("Image too large. Please select a smaller image", "error");
-          return;
-        }      }
-
-      if(!formData.image.trim()){
-        showSnackbar("Please upload image. Image is required.", "warning");
-        return;
+      const uploadResult = await uploadImageIfAny();
+  
+      // ❌ STOP if upload failed → DO NOT RUN submit API
+      if (!uploadResult.success) {
+        setLoading(false);
+  
+        if (uploadResult.reason === "TOO_LARGE") {
+          return showSnackbar("Image too large. Upload a smaller file.", "error");
+        }
+  
+        if (uploadResult.reason === "UPLOAD_FAILED") {
+          return showSnackbar("Image upload failed. Try again.", "error");
+        }
+  
+        return showSnackbar("Image is required.", "warning");
       }
-
-      const payload = { ...formData, image: imagePath };
+  
+      // ✔ ONLY continue if upload is successful
+      const payload = { ...formData, image: uploadResult.path };
       const res = await apiAddItem(payload);
-      const resData = res;
-
-      const ok = (resData?.ok ?? resData?.status === 200) || resData?.success;
+  
+      const ok = (res?.ok ?? res?.status === 200) || res?.success;
+  
       if (ok) {
         showSnackbar("Item added successfully!", "success");
         resetForm();
-        // optional: navigate("/home");
       } else {
-        showSnackbar(resData?.message || "Failed to add item.", "error");
+        showSnackbar(res?.message || "Failed to add item.", "error");
       }
+  
     } catch (err) {
-      console.error(err);
-      showSnackbar(err?.message || "Something went wrong while adding the item.", "error");
+      showSnackbar("Something went wrong.", "error");
     } finally {
       setLoading(false);
     }
   };
+  
+  
 
   return useMemo(
     () => ({
