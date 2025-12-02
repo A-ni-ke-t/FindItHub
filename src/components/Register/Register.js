@@ -29,8 +29,8 @@ import withHOC from "../../common/hoc/with-hoc";
 import { registerProvider, useRegisterContext } from "./provider";
 import { useTheme } from "@mui/material/styles";
 import { useColorMode } from "../../theme/ThemeProvider";
-import logoDark from "../../assets/Logo/Findithub_Dark.png"
-import logoLight from "../../assets/Logo/Findithub_Light.png"
+import logoDark from "../../assets/Logo/dark_theme.svg"
+import logoLight from "../../assets/Logo/light_theme.svg"
 const Register = () => {
   const theme = useTheme();
   const { mode } = useColorMode();

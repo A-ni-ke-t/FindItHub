@@ -26,8 +26,8 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import { useColorMode } from "../../theme/ThemeProvider";
-import logoDark from "../../assets/Logo/Findithub_Dark.png"
-import logoLight from "../../assets/Logo/Findithub_Light.png"
+import logoDark from "../../assets/Logo/dark_theme.svg"
+import logoLight from "../../assets/Logo/light_theme.svg"
 const drawerWidthExpanded = 240;
 const drawerWidthCollapsed = 80;
 

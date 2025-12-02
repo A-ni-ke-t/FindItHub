@@ -33,8 +33,8 @@ import { useTheme } from "@mui/material/styles";
 import { useColorMode } from "../../theme/ThemeProvider";
 import withHOC from "../../common/hoc/with-hoc";
 import { loginProvider, useLoginContext } from "./provider";
-import logoDark from "../../assets/Logo/Findithub_Dark.png"
-import logoLight from "../../assets/Logo/Findithub_Light.png"
+import logoDark from "../../assets/Logo/dark_theme.svg"
+import logoLight from "../../assets/Logo/light_theme.svg"
 const Login = () => {
   const theme = useTheme();
   const { mode } = useColorMode();
